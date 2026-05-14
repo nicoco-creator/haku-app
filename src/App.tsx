@@ -1,11 +1,14 @@
-function App() {
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BackgroundField } from './ui/BackgroundField'
+import { HomePage } from './modules/home'
+
+export default function App() {
   return (
-    <div className="flex min-h-svh items-center justify-center">
-      <p className="font-serif text-2xl font-light text-accent-blue">
-        Haku
-      </p>
-    </div>
+    <BrowserRouter basename="/haku-app">
+      <BackgroundField />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
-
-export default App
