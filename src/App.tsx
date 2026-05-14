@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { BackgroundField }  from './ui/BackgroundField'
+import { syncAlertLevel }   from './core/metrics'
 import { HomePage }         from './modules/home'
 import { StudyPage }        from './modules/study'
 import { EmotionPage }      from './modules/emotion'
@@ -35,6 +37,18 @@ function AppContent() {
 }
 
 export default function App() {
+  useEffect(() => {
+    // 起動時に指標を計算して alertLevel を zustand に反映
+    syncAlertLevel()
+
+    // バックグラウンドから復帰したとき（日付をまたいだ場合も含む）に再計算
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') syncAlertLevel()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
   return (
     <BrowserRouter basename="/haku-app">
       <BackgroundField />
