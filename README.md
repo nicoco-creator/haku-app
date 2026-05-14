@@ -1,73 +1,110 @@
-# React + TypeScript + Vite
+# haku-app
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+個人用 PWA コンパニオンアプリ。  
+データはすべてブラウザの IndexedDB に保存されます（サーバー送信なし）。
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## バックアップ手順
 
-## React Compiler
+### 概要
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- ブラウザの「閲覧履歴・Cookieを消去」を実行すると IndexedDB ごと消えます
+- 端末を替えるときや OS 再インストールの前に必ずバックアップを取ってください
+- **Vault（裁かない倉庫）** のデータは通常バックアップに含まれません。別途暗号化エクスポートが必要です
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. 全データのエクスポート（Vault 除く）
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+1. haku-app を開き、右上の **⚙️** → **設定** を開く
+2. 「バックアップ / 復元」セクションの **「エクスポート」** をタップ
+3. `haku-backup-YYYYMMDD.json` がダウンロードされる
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+含まれるテーブル：投稿・日記・良かった日・待っているもの・学習・対話ログ・指標・閲覧記録
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Vault の暗号化エクスポート
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. 設定 → 「**Vault 暗号化エクスポート**」セクション
+2. パスフレーズを入力する  
+   ⚠️ **このパスフレーズを忘れると復元できません。必ずメモして安全な場所に保管してください**
+3. **「暗号化して書き出す」** をタップ
+4. `haku-vault-YYYYMMDD.encjson` がダウンロードされる
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+暗号化方式：AES-GCM 256bit（PBKDF2-SHA256 100,000回）
+
+---
+
+### 3. ファイルの保管方法
+
+#### iCloud Drive（iPhone / iPad）
+
+1. Safari で haku-app を開き、エクスポートボタンをタップ
+2. ダウンロードが完了したら Safari のアドレスバー横の **↓ ダウンロード** アイコンをタップ
+3. ファイルを長押し → **「ファイル App で開く」**
+4. **「iCloud Drive」** → 任意のフォルダ（例：`haku-backup/`）に **「移動」**
+5. iCloud が自動的に他の端末へ同期する
+
+> **別端末（Mac / Windows）から確認する場合**  
+> Mac: Finder → iCloud Drive → haku-backup/  
+> Windows: エクスプローラー → iCloud Drive for Windows → haku-backup/
+
+#### OneDrive（Windows / Surface Pro 8）
+
+1. Edge で haku-app を開き、エクスポートボタンをクリック
+2. ダウンロードは通常 `C:\Users\<ユーザー名>\Downloads\` に保存される
+3. エクスプローラーで OneDrive フォルダを開く  
+   例：`C:\Users\<ユーザー名>\OneDrive\ドキュメント\haku-backup\`
+4. ダウンロードしたファイルをそのフォルダへコピー
+5. OneDrive が自動的にクラウドへ同期する
+
+---
+
+### 4. データのインポート（復元）
+
+1. 設定 → 「**データインポート**」セクション
+2. **「ファイルを選択」** で `haku-backup-YYYYMMDD.json` を選ぶ
+3. モードを選択する：
+
+   | モード | 動作 |
+   |--------|------|
+   | **マージ** | 既存データを残したまま追加する（重複に注意） |
+   | **上書き** | 既存データをすべて削除してから追加する |
+
+4. **「インポート」** → 確認ダイアログで **「実行」** をタップ
+
+> ⚠️ 「上書き」は元に戻せません。インポート前に現在のデータをエクスポートしておくことを推奨します
+
+---
+
+### 5. Vault の復元
+
+1. 設定 → 「**Vault 復元（復号）**」セクション
+2. **「ファイルを選択」** で `haku-vault-YYYYMMDD.encjson` を選ぶ
+3. 保存しておいたパスフレーズを入力する
+4. **「復元」** をタップ
+
+> 復元は **マージのみ**（既存の Vault メモは削除されません）  
+> パスフレーズが間違っている場合はエラーメッセージが表示されます
+
+---
+
+### 定期バックアップの目安
+
+| 頻度 | タイミング |
+|------|-----------|
+| 週1回 | 毎週末にエクスポートして iCloud / OneDrive へ保存 |
+| 月1回 | Vault の暗号化エクスポートを実施 |
+| 都度 | 端末変更・OS 再インストール・ブラウザ初期化の前 |
+
+---
+
+## 技術情報
+
+- **フレームワーク**：Vite + React 18 + TypeScript
+- **データ**：IndexedDB（Dexie.js）、サーバー送信なし
+- **AI 連携**：Userscript 経由でブラウザの Claude / Gemini / ChatGPT 無料枠を利用
+- **暗号化**：Web Crypto API（AES-GCM 256bit / PBKDF2-SHA256）
+- **ホスティング**：GitHub Pages（`/haku-app`）
