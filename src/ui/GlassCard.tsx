@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, type CSSProperties } from 'react'
 import { glassCard, getAccent, type AccentName } from './tokens'
 
 const paddingMap = {
@@ -13,6 +13,7 @@ interface Props {
   size?: 'sm' | 'md' | 'lg'
   onClick?: () => void
   className?: string
+  style?: CSSProperties
 }
 
 export function GlassCard({
@@ -21,6 +22,7 @@ export function GlassCard({
   size = 'md',
   onClick,
   className,
+  style,
 }: Props) {
   const borderColor = accent
     ? `${getAccent(accent)}80`
@@ -39,6 +41,7 @@ export function GlassCard({
         padding: paddingMap[size],
         cursor: onClick ? 'pointer' : 'default',
         transition: 'transform 0.25s ease, filter 0.25s ease',
+        ...style,
       }}
       onMouseEnter={(e) => {
         if (!onClick) return
