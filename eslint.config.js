@@ -19,4 +19,17 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  // ── Vault AI isolation ────────────────────────────────────────────────────
+  // 「裁かない倉庫」モジュールからai-bridgeをimportすることをESLintで禁止する
+  {
+    files: ['src/modules/vault/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [{
+          group: ['**/core/ai-bridge', '**/ai-bridge'],
+          message: 'Vault module must NOT import ai-bridge. (CLAUDE.md: 裁かない倉庫はAI隔離)',
+        }],
+      }],
+    },
+  },
 ])
