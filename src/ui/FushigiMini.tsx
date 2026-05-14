@@ -53,11 +53,11 @@ export function FushigiMini({ mood: _mood }: Props) {
         }}
       >
         <img
-          src={`${BASE}fushigi-placeholder.svg`}
+          src={`${BASE}fushigi-placeholder.png`}
           alt="フシギちゃん"
           width={50}
           height={50}
-          style={{ borderRadius: '50%', pointerEvents: 'none' }}
+          style={{ borderRadius: '50%', objectFit: 'cover', pointerEvents: 'none' }}
         />
       </button>
     </div>

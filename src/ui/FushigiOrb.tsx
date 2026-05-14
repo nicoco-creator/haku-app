@@ -150,9 +150,9 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
         }}
       >
         <img
-          src={`${BASE}fushigi-placeholder.svg`}
+          src={`${BASE}fushigi-placeholder.png`}
           alt="" width={50} height={50}
-          style={{ borderRadius: '50%', ...moodFilter[mood] }}
+          style={{ borderRadius: '50%', objectFit: 'cover', ...moodFilter[mood] }}
         />
       </button>
     )
@@ -177,7 +177,7 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
       >
         <img
           ref={imgRef}
-          src={`${BASE}fushigi-placeholder.svg`}
+          src={`${BASE}fushigi-placeholder.png`}
           alt="フシギちゃん"
           style={{
             width: '88%', height: '88%',
