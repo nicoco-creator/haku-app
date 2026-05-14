@@ -8,6 +8,7 @@ import { syncAlertLevel } from '../../core/metrics'
 import { goodDays, type GoodDay } from '../../core/db'
 import { colors } from '../../ui/tokens'
 import type { AccentName } from '../../ui/tokens'
+import { getStudyQuota } from '../../core/study-store'
 
 interface Module {
   label: string
@@ -132,6 +133,7 @@ export function HomePage() {
 
   const leftModules  = modules.slice(0, 4)
   const rightModules = modules.slice(4, 8)
+  const studyQuota   = getStudyQuota()
 
   const orb = <FushigiOrb mode="hero" mood={mood} message={message} />
 
@@ -193,6 +195,11 @@ export function HomePage() {
               >
                 {mod.label}
               </span>
+              {mod.to === '/study' && studyQuota && (
+                <span style={{ fontSize: '9px', color: colors.accent.indigo, textAlign: 'center', lineHeight: 1 }}>
+                  今日: {studyQuota.dailyLoad}章
+                </span>
+              )}
             </GlassCard>
           ))}
         </div>
@@ -213,6 +220,11 @@ export function HomePage() {
             >
               <span style={{ fontSize: '30px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
               <span style={{ fontSize: '14px', color: '#F0EEF8', fontWeight: 400 }}>{mod.label}</span>
+              {mod.to === '/study' && studyQuota && (
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: colors.accent.indigo, whiteSpace: 'nowrap' }}>
+                  {studyQuota.dailyLoad}章/日
+                </span>
+              )}
             </GlassCard>
           ))}
         </div>

@@ -14,6 +14,11 @@ export interface Study {
   id?: number
   subject: string
   content: string
+  chapter?: string
+  page?: number
+  mediaType?: 'text' | 'pdf' | 'image'
+  needsOcr?: boolean
+  imageData?: string
   status: 'todo' | 'doing' | 'done'
   createdAt: string
 }
@@ -23,6 +28,7 @@ export interface Schedule {
   examDate: string
   dailyLoad: number
   subject: string
+  totalSections?: number
   createdAt: string
 }
 
@@ -116,6 +122,11 @@ class HakuDatabase extends Dexie {
       chatLogs:   '++id, role, createdAt',
       metrics:    '++id, date',
       seenStats:  '++id, date',
+    })
+    // v2: mediaType index for studies, subject index for schedules
+    this.version(2).stores({
+      studies:   '++id, subject, status, mediaType, createdAt',
+      schedules: '++id, examDate, subject, createdAt',
     })
   }
 }
