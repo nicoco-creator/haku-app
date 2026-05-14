@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+@plugin "@tailwindcss/typography";
+
+@layer base {
+  :root {
+    --frost: rgba(255, 255, 255, 0.07);
+    --frost-border: rgba(255, 255, 255, 0.14);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100svh;
+  }
+
+  body {
+    background: radial-gradient(ellipse at 30% 40%, #2a2050 0%, #1c1a2e 50%, #14122a 100%);
+    color: #f0eef8;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100svh;
+  }
+}
