@@ -4,7 +4,9 @@ import { FushigiOrb } from '../../ui/FushigiOrb'
 import { GlassCard } from '../../ui/GlassCard'
 import { getGreeting } from '../../core/greeting'
 import { useAppStore } from '../../core/store'
+import { syncAlertLevel } from '../../core/metrics'
 import { goodDays, type GoodDay } from '../../core/db'
+import { colors } from '../../ui/tokens'
 import type { AccentName } from '../../ui/tokens'
 
 interface Module {
@@ -33,7 +35,11 @@ function isLastDayOfMonth(): boolean {
 }
 
 function AlertFooter({ alertLevel }: { alertLevel: number }) {
+  const setAlertOkUntil = useAppStore((s) => s.setAlertOkUntil)
+  const alertOkUntil    = useAppStore((s) => s.alertOkUntil)
   const [memoryCard, setMemoryCard] = useState<GoodDay | null>(null)
+
+  const isOkActive = alertOkUntil !== null && Date.now() < alertOkUntil
 
   useEffect(() => {
     if (alertLevel < 3) { setMemoryCard(null); return }
@@ -43,18 +49,28 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
     })
   }, [alertLevel])
 
-  if (alertLevel < 2) return null
+  const handleImOk = async () => {
+    setAlertOkUntil(Date.now() + 24 * 60 * 60 * 1000)
+    await syncAlertLevel()
+  }
+
+  if (alertLevel < 1 && !isOkActive) return null
 
   return (
     <div style={{ padding: '0 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-      <p style={{
-        fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
-        fontSize: 'clamp(12px, 3vw, 14px)',
-        color: '#A89FC0', textAlign: 'center', margin: 0, lineHeight: 1.8,
-      }}>
-        最近、かなりアクセル踏んでます。最後にちゃんと休んだの、いつでしたっけ。
-      </p>
 
+      {/* レベル2以上の警告テキスト */}
+      {alertLevel >= 2 && (
+        <p style={{
+          fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
+          fontSize: 'clamp(12px, 3vw, 14px)',
+          color: '#A89FC0', textAlign: 'center', margin: 0, lineHeight: 1.8,
+        }}>
+          最近、かなりアクセル踏んでます。最後にちゃんと休んだの、いつでしたっけ。
+        </p>
+      )}
+
+      {/* レベル3：良かった日カード */}
       {alertLevel >= 3 && memoryCard && (
         <GlassCard size="sm" style={{ maxWidth: 320, width: '100%', textAlign: 'center' }}>
           <p style={{
@@ -70,6 +86,39 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
             {memoryCard.content.split(/[。\n]/)[0]}
           </p>
         </GlassCard>
+      )}
+
+      {/* 「私はいま大丈夫」ボタン（レベル1以上で表示） */}
+      {!isOkActive ? (
+        <button
+          onClick={handleImOk}
+          style={{
+            background: 'none',
+            border: `1px solid ${colors.accent.silver}50`,
+            borderRadius: 20, padding: '5px 18px',
+            color: colors.text.secondary,
+            fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
+            fontSize: 12, cursor: 'pointer', letterSpacing: '0.05em',
+            transition: 'border-color 0.2s, color 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = colors.accent.silver
+            e.currentTarget.style.color = colors.text.primary
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = `${colors.accent.silver}50`
+            e.currentTarget.style.color = colors.text.secondary
+          }}
+        >
+          私はいま大丈夫
+        </button>
+      ) : (
+        <p style={{
+          fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
+          fontSize: 12, color: colors.accent.blue, margin: 0,
+        }}>
+          24時間、そっとしておきます。
+        </p>
       )}
     </div>
   )

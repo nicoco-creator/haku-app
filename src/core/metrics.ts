@@ -104,21 +104,104 @@ export async function calculateAlertLevel(): Promise<0 | 1 | 2 | 3> {
   return level
 }
 
+// ── getAlertDiagnostics ───────────────────────────────────────────────────────
+// 現在の指標とトリガー状況を返す（設定画面での「条件を見る」用）
+
+export interface AlertDiagnostics {
+  todayPostCount:       number
+  avgPostCount:         number
+  postCountTriggered:   boolean
+  todayPosDensity:      number
+  avgPosDensity:        number
+  posDensityTriggered:  boolean
+  todayChars:           number
+  avgChars:             number
+  charsTriggered:       boolean
+  companionInactiveDays: number
+  companionTriggered:   boolean
+  rawScore:             number
+  calculatedLevel:      0 | 1 | 2 | 3
+}
+
+export async function getAlertDiagnostics(): Promise<AlertDiagnostics> {
+  const today   = todayStr()
+  const start14 = dateNDaysAgo(13)
+  await recordDailyMetrics(today)
+
+  const recentMetrics = await metrics.listByDateRange(start14, today)
+  const todayMetric   = recentMetrics.find((m) => m.date === today)
+  const baseline      = recentMetrics.filter((m) => m.date !== today)
+
+  const avgPostCount  = baseline.length ? baseline.reduce((s, m) => s + m.postCount, 0) / baseline.length : 0
+  const avgPosDensity = baseline.length ? baseline.reduce((s, m) => s + m.positiveDensity, 0) / baseline.length : 0
+
+  const todayPosts = await posts.listByDateRange(today, today)
+  const todayChars = todayPosts.reduce((s, p) => s + p.content.length, 0)
+
+  const baselineDates    = baseline.map((m) => m.date)
+  const baselinePostsAll = baselineDates.length
+    ? await posts.listByDateRange(baselineDates[baselineDates.length - 1], baselineDates[0])
+    : []
+  const charsByDate = new Map<string, number>()
+  for (const p of baselinePostsAll) {
+    charsByDate.set(p.date, (charsByDate.get(p.date) ?? 0) + p.content.length)
+  }
+  const avgChars = baseline.length
+    ? [...charsByDate.values()].reduce((s, v) => s + v, 0) / baseline.length
+    : 0
+
+  const lastChat = await db.chatLogs.orderBy('createdAt').last()
+  const companionInactiveDays = lastChat
+    ? Math.floor((Date.now() - new Date(lastChat.createdAt).getTime()) / 86_400_000)
+    : 999
+
+  const todayPostCount  = todayMetric?.postCount      ?? 0
+  const todayPosDensity = todayMetric?.positiveDensity ?? 0.5
+
+  const postCountTriggered  = avgPostCount  > 0 && todayPostCount  > avgPostCount  * 2
+  const posDensityTriggered = avgPosDensity > 0 && todayPosDensity > avgPosDensity * 1.5
+  const charsTriggered      = avgChars      > 0 && todayChars      > avgChars      * 2
+  const companionTriggered  = companionInactiveDays >= 3
+
+  let rawScore = 0
+  if (postCountTriggered)  rawScore += 1
+  if (posDensityTriggered) rawScore += 2
+  if (charsTriggered)      rawScore += 1
+  if (companionTriggered)  rawScore += 1
+
+  return {
+    todayPostCount, avgPostCount, postCountTriggered,
+    todayPosDensity, avgPosDensity, posDensityTriggered,
+    todayChars, avgChars, charsTriggered,
+    companionInactiveDays, companionTriggered,
+    rawScore,
+    calculatedLevel: Math.min(3, rawScore) as 0 | 1 | 2 | 3,
+  }
+}
+
 // ── syncAlertLevel ────────────────────────────────────────────────────────────
 // アプリ起動時・日付切り替わり時に呼ぶ。
-// 当日分の計算が未実施なら実行し、zustand の alertLevel を更新する。
+// override（一時停止 / "私はいま大丈夫"）を反映した上で zustand を更新する。
 
 export async function syncAlertLevel(): Promise<void> {
   const today = todayStr()
   const last  = localStorage.getItem(LAST_CALC_KEY)
 
-  // 同日内でも必ず再計算（投稿が増えている可能性がある）
-  // 日付が変わった場合は前日分も記録しておく
-  if (last && last < today) {
-    await recordDailyMetrics(last)
+  if (last && last < today) await recordDailyMetrics(last)
+
+  const store = useAppStore.getState()
+
+  // override チェック
+  const isPaused  = store.alertPaused
+  const isOk      = store.alertOkUntil !== null && Date.now() < store.alertOkUntil
+
+  if (isPaused || isOk) {
+    localStorage.setItem(LAST_CALC_KEY, today)
+    store.setAlertLevel(0)
+    return
   }
 
   const level = await calculateAlertLevel()
   localStorage.setItem(LAST_CALC_KEY, today)
-  useAppStore.getState().setAlertLevel(level)
+  store.setAlertLevel(level)
 }
