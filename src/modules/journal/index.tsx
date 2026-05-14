@@ -356,7 +356,7 @@ function HistoryView() {
           key={entry.id}
           accent="blush"
           size="sm"
-          onClick={() => setOpen(open === entry.id ? null : entry.id)}
+          onClick={() => setOpen(open === entry.id ? null : (entry.id ?? null))}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{

@@ -354,7 +354,8 @@ export function EmotionPage() {
       </GlassCard>
 
       {/* ── paste input ── */}
-      <GlassCard accent="blush" size="md" style={{ marginTop: 16 } as React.CSSProperties}>
+      <div style={{ marginTop: 16 }}>
+      <GlassCard accent="blush" size="md">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <textarea
             value={inputText}
@@ -396,6 +397,7 @@ export function EmotionPage() {
           </div>
         </div>
       </GlassCard>
+      </div>
 
       {/* ── actions row ── */}
       <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
@@ -419,7 +421,8 @@ export function EmotionPage() {
 
       {/* ── AI result ── */}
       {aiResult && (
-        <GlassCard accent="blush" size="md" style={{ marginTop: 14 } as React.CSSProperties}>
+        <div style={{ marginTop: 14 }}>
+        <GlassCard accent="blush" size="md">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
             <p style={{
               color: colors.text.primary, fontSize: 14, margin: 0,
@@ -436,6 +439,7 @@ export function EmotionPage() {
             </button>
           </div>
         </GlassCard>
+        </div>
       )}
 
       {/* ── modals ── */}
