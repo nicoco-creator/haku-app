@@ -16,6 +16,7 @@ export const colors = {
 } as const
 
 export type AccentName = keyof typeof colors.accent
+export type Mood = 'default' | 'sleepy' | 'smile' | 'worried'
 
 export function getAccent(name: AccentName): string {
   return colors.accent[name]

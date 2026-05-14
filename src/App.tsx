@@ -1,13 +1,33 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { BackgroundField } from './ui/BackgroundField'
-import { HomePage } from './modules/home'
+import { HomePage }     from './modules/home'
+import { StudyPage }    from './modules/study'
+import { EmotionPage }  from './modules/emotion'
+import { WeatherPage }  from './modules/weather'
+import { JournalPage }  from './modules/journal'
+import { CompanionPage } from './modules/companion'
+import { GooddayPage }  from './modules/goodday'
+import { WaitingPage }  from './modules/waiting'
+import { VaultPage }    from './modules/vault'
+import { SettingsPage } from './modules/settings'
+import { SeenPage }     from './modules/seen'
 
 export default function App() {
   return (
     <BrowserRouter basename="/haku-app">
       <BackgroundField />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/"          element={<HomePage />} />
+        <Route path="/study"     element={<StudyPage />} />
+        <Route path="/emotion"   element={<EmotionPage />} />
+        <Route path="/weather"   element={<WeatherPage />} />
+        <Route path="/journal"   element={<JournalPage />} />
+        <Route path="/companion" element={<CompanionPage />} />
+        <Route path="/goodday"   element={<GooddayPage />} />
+        <Route path="/waiting"   element={<WaitingPage />} />
+        <Route path="/vault"     element={<VaultPage />} />
+        <Route path="/settings"  element={<SettingsPage />} />
+        <Route path="/seen"      element={<SeenPage />} />
       </Routes>
     </BrowserRouter>
   )

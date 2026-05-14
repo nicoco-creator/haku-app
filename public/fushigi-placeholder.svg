@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="face" cx="42%" cy="38%" r="62%">
+      <stop offset="0%" stop-color="#7B6FA8"/>
+      <stop offset="100%" stop-color="#2A2050"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#A8C8E8" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#A8C8E8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="99" fill="url(#face)"/>
+  <circle cx="100" cy="100" r="99" fill="url(#glow)"/>
+  <!-- Hair suggestion -->
+  <ellipse cx="100" cy="42" rx="42" ry="22" fill="#4A3880" opacity="0.9"/>
+  <ellipse cx="68" cy="55" rx="14" ry="28" fill="#4A3880" opacity="0.85"/>
+  <ellipse cx="132" cy="55" rx="14" ry="28" fill="#4A3880" opacity="0.85"/>
+  <!-- Eyes -->
+  <ellipse cx="80" cy="100" rx="9" ry="10" fill="#F0EEF8" opacity="0.95"/>
+  <ellipse cx="120" cy="100" rx="9" ry="10" fill="#F0EEF8" opacity="0.95"/>
+  <circle cx="82" cy="101" r="5.5" fill="#1C1A2E"/>
+  <circle cx="122" cy="101" r="5.5" fill="#1C1A2E"/>
+  <circle cx="84" cy="98" r="2" fill="white" opacity="0.9"/>
+  <circle cx="124" cy="98" r="2" fill="white" opacity="0.9"/>
+  <!-- Subtle blush -->
+  <ellipse cx="68" cy="114" rx="12" ry="6" fill="#E8B4C8" opacity="0.25"/>
+  <ellipse cx="132" cy="114" rx="12" ry="6" fill="#E8B4C8" opacity="0.25"/>
+  <!-- Mouth -->
+  <path d="M 90 122 Q 100 130 110 122" stroke="#F0EEF8" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+  <!-- Shine -->
+  <ellipse cx="82" cy="62" rx="22" ry="10" fill="white" opacity="0.06" transform="rotate(-20, 82, 62)"/>
+</svg>
