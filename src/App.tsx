@@ -1,21 +1,22 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { BackgroundField } from './ui/BackgroundField'
-import { HomePage }     from './modules/home'
-import { StudyPage }    from './modules/study'
-import { EmotionPage }  from './modules/emotion'
-import { WeatherPage }  from './modules/weather'
-import { JournalPage }  from './modules/journal'
-import { CompanionPage } from './modules/companion'
-import { GooddayPage }  from './modules/goodday'
-import { WaitingPage }  from './modules/waiting'
-import { VaultPage }    from './modules/vault'
-import { SettingsPage } from './modules/settings'
-import { SeenPage }     from './modules/seen'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BackgroundField }  from './ui/BackgroundField'
+import { HomePage }         from './modules/home'
+import { StudyPage }        from './modules/study'
+import { EmotionPage }      from './modules/emotion'
+import { WeatherPage }      from './modules/weather'
+import { JournalPage }      from './modules/journal'
+import { CompanionPage }    from './modules/companion'
+import { GooddayPage }      from './modules/goodday'
+import { WaitingPage }      from './modules/waiting'
+import { VaultPage }        from './modules/vault'
+import { SettingsPage }     from './modules/settings'
+import { SeenPage }         from './modules/seen'
+import './ui/transitions.css'
 
-export default function App() {
+function AppContent() {
+  const location = useLocation()
   return (
-    <BrowserRouter basename="/haku-app">
-      <BackgroundField />
+    <div className="route-enter" key={location.pathname}>
       <Routes>
         <Route path="/"          element={<HomePage />} />
         <Route path="/study"     element={<StudyPage />} />
@@ -29,6 +30,15 @@ export default function App() {
         <Route path="/settings"  element={<SettingsPage />} />
         <Route path="/seen"      element={<SeenPage />} />
       </Routes>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <BrowserRouter basename="/haku-app">
+      <BackgroundField />
+      <AppContent />
     </BrowserRouter>
   )
 }
