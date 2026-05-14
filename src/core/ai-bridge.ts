@@ -34,6 +34,11 @@ export function askAI(
   prompt: string,
   options?: { service?: AIService; skipProtocol?: boolean }
 ): Promise<string> {
+  // Runtime vault isolation: /vault pages must never reach the AI.
+  if (typeof window !== 'undefined' && window.location.pathname.includes('/vault')) {
+    return Promise.reject(new Error('⛔ askAI は /vault から呼び出せません — Vault Isolation Policy'))
+  }
+
   const service      = options?.service ?? 'claude'
   const skipProtocol = options?.skipProtocol ?? false
 
