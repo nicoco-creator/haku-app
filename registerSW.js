@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/haku-app/sw.js', { scope: '/haku-app/' })})}
