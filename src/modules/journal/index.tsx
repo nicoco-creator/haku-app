@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ModuleShell } from '../../ui/ModuleShell'
 import { GlassCard } from '../../ui/GlassCard'
@@ -418,7 +418,7 @@ function HistoryView() {
 export function JournalPage() {
   const [tab, setTab] = useState<'today' | 'history'>('today')
 
-  const tabStyle = (active: boolean): React.CSSProperties => ({
+  const tabStyle = (active: boolean): CSSProperties => ({
     flex: 1, padding: '8px 0',
     background: active ? `${colors.accent.blush}20` : 'transparent',
     border: 'none',

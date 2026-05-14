@@ -111,7 +111,7 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
     }
   }, [mode, mood])
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handlePointerMove = (e: { clientX: number; clientY: number; currentTarget: HTMLDivElement }) => {
     if (particles.current.length >= 50) return
     const rect = e.currentTarget.getBoundingClientRect()
     const x  = e.clientX - rect.left

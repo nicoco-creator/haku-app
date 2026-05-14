@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, type CSSProperties } from 'react'
 import { ModuleShell } from '../../ui/ModuleShell'
 import { GlassCard } from '../../ui/GlassCard'
 import { glassCard, colors } from '../../ui/tokens'
@@ -234,13 +234,13 @@ function BulkModal({ onClose, onImported }: { onClose: () => void; onImported: (
 
 // ── button styles ─────────────────────────────────────────────────────────────
 
-const cancelBtnStyle: React.CSSProperties = {
+const cancelBtnStyle: CSSProperties = {
   background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)',
   borderRadius: 10, padding: '8px 18px', color: colors.text.secondary,
   cursor: 'pointer', fontFamily: "'Noto Sans JP',sans-serif", fontSize: 13,
 }
 
-const primaryBtnStyle = (active: boolean): React.CSSProperties => ({
+const primaryBtnStyle = (active: boolean): CSSProperties => ({
   background: active ? `${colors.accent.blush}22` : 'rgba(255,255,255,0.04)',
   border: `1px solid ${active ? colors.accent.blush + '80' : 'rgba(255,255,255,0.10)'}`,
   borderRadius: 10, padding: '8px 20px',

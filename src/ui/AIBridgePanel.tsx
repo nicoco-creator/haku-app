@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import { glassCard } from './tokens'
 import {
   getPendingRequest,
@@ -182,7 +182,7 @@ export function AIBridgePanel() {
   )
 }
 
-function btnStyle(color: string, disabled = false): React.CSSProperties {
+function btnStyle(color: string, disabled = false): CSSProperties {
   return {
     background: disabled ? 'rgba(255,255,255,0.05)' : `${color}33`,
     border: `1px solid ${disabled ? 'rgba(255,255,255,0.1)' : `${color}88`}`,
