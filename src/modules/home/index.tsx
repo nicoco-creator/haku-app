@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FushigiOrb } from '../../ui/FushigiOrb'
 import { GlassCard } from '../../ui/GlassCard'
 import { getGreeting } from '../../core/greeting'
+import { useAppStore } from '../../core/store'
+import { goodDays, type GoodDay } from '../../core/db'
 import type { AccentName } from '../../ui/tokens'
 
 interface Module {
@@ -29,8 +32,52 @@ function isLastDayOfMonth(): boolean {
   return tomorrow.getMonth() !== now.getMonth()
 }
 
+function AlertFooter({ alertLevel }: { alertLevel: number }) {
+  const [memoryCard, setMemoryCard] = useState<GoodDay | null>(null)
+
+  useEffect(() => {
+    if (alertLevel < 3) { setMemoryCard(null); return }
+    goodDays.list().then((all) => {
+      if (!all.length) return
+      setMemoryCard(all[Math.floor(Math.random() * all.length)])
+    })
+  }, [alertLevel])
+
+  if (alertLevel < 2) return null
+
+  return (
+    <div style={{ padding: '0 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      <p style={{
+        fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
+        fontSize: 'clamp(12px, 3vw, 14px)',
+        color: '#A89FC0', textAlign: 'center', margin: 0, lineHeight: 1.8,
+      }}>
+        最近、かなりアクセル踏んでます。最後にちゃんと休んだの、いつでしたっけ。
+      </p>
+
+      {alertLevel >= 3 && memoryCard && (
+        <GlassCard size="sm" style={{ maxWidth: 320, width: '100%', textAlign: 'center' }}>
+          <p style={{
+            fontFamily: "'Noto Sans JP', sans-serif", fontSize: 11,
+            color: '#A89FC0', margin: '0 0 4px',
+          }}>
+            {memoryCard.date}
+          </p>
+          <p style={{
+            fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
+            fontSize: 13, color: '#F0EEF8', margin: 0, lineHeight: 1.7,
+          }}>
+            {memoryCard.content.split(/[。\n]/)[0]}
+          </p>
+        </GlassCard>
+      )}
+    </div>
+  )
+}
+
 export function HomePage() {
-  const navigate = useNavigate()
+  const navigate   = useNavigate()
+  const alertLevel = useAppStore((s) => s.alertLevel)
   const { message, mood } = getGreeting()
   const lastDay = isLastDayOfMonth()
 
@@ -68,7 +115,7 @@ export function HomePage() {
       </header>
 
       {/* ── モバイルレイアウト (md 未満) ── */}
-      <div className="md:hidden flex flex-col items-center px-4 pb-10 gap-6">
+      <div className="md:hidden flex flex-col items-center px-4 pb-4 gap-6">
         <div
           className="flex items-center justify-center w-full"
           style={{ minHeight: '38svh' }}
@@ -144,6 +191,8 @@ export function HomePage() {
           ))}
         </div>
       </div>
+
+      <AlertFooter alertLevel={alertLevel} />
     </div>
   )
 }

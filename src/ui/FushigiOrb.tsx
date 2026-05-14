@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { glassCard, type Mood } from './tokens'
+import { useAppStore } from '../core/store'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -50,8 +51,9 @@ const moodFilter: Record<Mood, CSSProperties> = {
 const SMILE_FILTER = 'brightness(1.08) saturate(1.15) hue-rotate(-5deg)'
 
 export function FushigiOrb({ mode, mood = 'default', message }: Props) {
-  const navigate  = useNavigate()
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const navigate   = useNavigate()
+  const alertLevel = useAppStore((s) => s.alertLevel)
+  const canvasRef  = useRef<HTMLCanvasElement>(null)
   const orbRef    = useRef<HTMLDivElement>(null)
   const imgRef    = useRef<HTMLImageElement>(null)
   const particles = useRef<Particle[]>([])
@@ -134,6 +136,10 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
     }
   }
 
+  const foggedFilter = alertLevel >= 2
+    ? 'blur(28px) brightness(0.92)'
+    : 'blur(12px)'
+
   if (mode === 'mini') {
     return (
       <button
@@ -143,10 +149,12 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
           width: 56, height: 56, borderRadius: '50%',
           border: '1px solid rgba(255,255,255,0.2)',
           background: 'rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          backdropFilter: foggedFilter,
+          WebkitBackdropFilter: foggedFilter,
           cursor: 'pointer', overflow: 'hidden',
           padding: 0, display: 'flex', alignItems: 'center',
           justifyContent: 'center', flexShrink: 0, boxSizing: 'border-box',
+          transition: 'backdrop-filter 3s ease-in-out',
         }}
       >
         <img
@@ -167,12 +175,15 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
         onPointerMove={handlePointerMove}
         style={{
           ...glassCard,
+          backdropFilter: alertLevel >= 2 ? 'blur(28px) brightness(0.92)' : glassCard.backdropFilter,
+          WebkitBackdropFilter: alertLevel >= 2 ? 'blur(28px) brightness(0.92)' : glassCard.WebkitBackdropFilter,
           position: 'relative',
           borderRadius: '50%',
           width: orbSize, height: orbSize,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           overflow: 'hidden', flexShrink: 0,
           cursor: 'default',
+          transition: 'backdrop-filter 3s ease-in-out',
         }}
       >
         <img
