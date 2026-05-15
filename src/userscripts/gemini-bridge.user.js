@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         Haku AI Bridge (Claude)
+// @name         Haku AI Bridge (Gemini)
 // @namespace    https://github.com/nicoco-creator/haku-app
 // @version      2.0.0
-// @description  Haku AppのAIリクエストをClaude.aiで自動処理するブリッジ
+// @description  Haku AppのAIリクエストをGemini.google.comで自動処理するブリッジ
 // @author       nicoco-creator
-// @match        https://claude.ai/*
+// @match        https://gemini.google.com/*
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -35,7 +35,7 @@
     display: 'flex', alignItems: 'center', gap: '8px',
     background: 'rgba(20,18,40,0.92)', backdropFilter: 'blur(10px)',
     border: '1px solid rgba(255,255,255,0.15)', borderRadius: '20px',
-    padding: '6px 12px', fontFamily: '"Noto Sans JP",system-ui,sans-serif',
+    padding: '6px 12px', fontFamily: '"Google Sans",system-ui,sans-serif',
     fontSize: '12px', color: '#F0EEF8', userSelect: 'none',
     boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
     transition: 'opacity 0.3s',
@@ -98,8 +98,7 @@
     toggleBtn.textContent = autoEnabled ? '自動 ON' : '自動 OFF'
     toggleBtn.style.background  = autoEnabled ? '#5B5CE620' : 'rgba(255,255,255,0.05)'
     toggleBtn.style.borderColor = autoEnabled ? '#5B5CE660' : 'rgba(255,255,255,0.15)'
-    if (!autoEnabled) setStatus('paused')
-    else              setStatus('idle')
+    setStatus(autoEnabled ? 'idle' : 'paused')
   })
 
   // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -112,9 +111,9 @@
       paused:     { color: '#6A6480', shadow: 'none',               text: '停止中'      },
     }
     const s = map[state] ?? map.idle
-    dot.style.background  = s.color
-    dot.style.boxShadow   = s.shadow
-    label.textContent     = s.text
+    dot.style.background = s.color
+    dot.style.boxShadow  = s.shadow
+    label.textContent    = s.text
   }
 
   function addLog(msg) {
@@ -123,7 +122,7 @@
     logs.unshift(line)
     if (logs.length > MAX_LOGS) logs.pop()
     logPanel.textContent = logs.join('\n')
-    console.log('[Haku Bridge]', msg)
+    console.log('[Haku Bridge Gemini]', msg)
   }
 
   const delay = ms => new Promise(r => setTimeout(r, ms))
@@ -137,52 +136,79 @@
     }
   }
 
-  // ── Claude.ai DOM selectors ───────────────────────────────────────────────────
+  // ── Gemini DOM selectors ──────────────────────────────────────────────────────
+  //
+  // Gemini uses a rich-textarea web component wrapping a div[contenteditable].
+  // The Angular Material send button lives inside a mat-icon-button.
+  // NOTE: Google frequently renames classes/attributes; fallback chains are wide.
 
   function getInputEl() {
     return (
-      document.querySelector('div[contenteditable="true"].ProseMirror') ??
-      document.querySelector('fieldset div[contenteditable="true"]')    ??
-      document.querySelector('div[contenteditable="true"][data-placeholder]') ??
+      // Primary: rich-textarea custom element's inner contenteditable
+      document.querySelector('rich-textarea div[contenteditable="true"]')        ??
+      // Quill editor (used in some Gemini Advanced views)
+      document.querySelector('div.ql-editor[contenteditable="true"]')            ??
+      // Generic fallback
+      document.querySelector('div[contenteditable="true"][data-placeholder]')    ??
       document.querySelector('div[contenteditable="true"]')
     )
   }
 
   function getSendBtn() {
-    return (
-      document.querySelector('button[aria-label="Send message"]')           ??
-      document.querySelector('button[aria-label="メッセージを送信"]')        ??
-      document.querySelector('button[data-testid="send-button"]')           ??
-      [...document.querySelectorAll('button')].find(
-        b => !b.disabled && /send|送信/i.test(b.getAttribute('aria-label') ?? '')
-      ) ?? null
+    // Gemini send button patterns (order: most specific → least)
+    const byLabel = document.querySelector(
+      'button[aria-label="Send message"], button[aria-label="メッセージを送信"],' +
+      'button[aria-label="Submit"], button[aria-label="送信"]'
     )
+    if (byLabel && !byLabel.disabled) return byLabel
+
+    // mat-icon-button that contains a "send" icon
+    const matBtns = [...document.querySelectorAll('button[mat-icon-button], button.mat-mdc-icon-button')]
+    const sendMat = matBtns.find(b =>
+      !b.disabled && /send/i.test(b.querySelector('mat-icon, .material-icons')?.textContent ?? '')
+    )
+    if (sendMat) return sendMat
+
+    // data-test-id patterns
+    const byTest = document.querySelector(
+      '[data-test-id="send-button"], [jsname="Qxe3md"]'
+    )
+    if (byTest && !byTest.disabled) return byTest
+
+    return null
   }
 
   function isStreamingActive() {
+    // Gemini shows a stop button or a pulsing loading indicator while generating
     return !!(
-      document.querySelector('button[aria-label="Stop generating"]')         ||
-      document.querySelector('button[aria-label="生成を停止"]')              ||
-      document.querySelector('button[aria-label="Stop Response"]')           ||
-      document.querySelector('button[data-testid="stop-button"]')            ||
-      document.querySelector('[data-is-streaming="true"]')
+      document.querySelector('button[aria-label="Stop generating"]')            ||
+      document.querySelector('button[aria-label="生成を停止"]')                 ||
+      document.querySelector('button[aria-label="Stop response"]')              ||
+      document.querySelector('[data-test-id="stop-button"]')                    ||
+      // Loading spinner mat-progress-spinner inside a response turn
+      document.querySelector('response-container .loading, model-response .loading') ||
+      document.querySelector('mat-progress-spinner[mode="indeterminate"]')
     )
   }
 
   function getMessageCount() {
     return Math.max(
-      document.querySelectorAll('.font-claude-message').length,
-      document.querySelectorAll('[data-test-render-count]').length,
-      document.querySelectorAll('[class*="assistant"][class*="message"]').length,
+      document.querySelectorAll('model-response').length,
+      document.querySelectorAll('.model-response-text').length,
+      document.querySelectorAll('ms-chat-turn').length,
+      document.querySelectorAll('[data-test-id="response"]').length,
     )
   }
 
   function getLastAssistantMessage() {
+    // Try selectors in order of preference — Gemini response containers
     for (const sel of [
-      '.font-claude-message',
-      '[data-test-render-count]',
-      '.prose.break-words',
-      '[class*="assistant-message"] .prose',
+      'model-response .markdown',
+      '.model-response-text',
+      'model-response message-content',
+      'ms-chat-turn .response-content',
+      '[data-test-id="response"] .markdown',
+      'response-container .response-text',
     ]) {
       const els = document.querySelectorAll(sel)
       if (els.length) {
@@ -190,27 +216,49 @@
         if (text) return text
       }
     }
+    // Wide fallback: any substantial text block after the last user message
+    const allTurns = document.querySelectorAll('ms-chat-turn, .conversation-turn')
+    if (allTurns.length) {
+      const last = allTurns[allTurns.length - 1]
+      const text = last.innerText?.trim()
+      if (text) return text
+    }
     return ''
   }
 
-  // ── Text insertion (ProseMirror) ──────────────────────────────────────────────
+  // ── Text insertion (Gemini's contenteditable) ─────────────────────────────────
+  //
+  // Gemini may use Quill (ql-editor) or a plain contenteditable.
+  // execCommand('insertText') is the safest cross-framework approach.
+  // If that fails, we dispatch a ClipboardEvent (paste) as a fallback.
 
   function insertPrompt(el, text) {
     el.focus()
     // Clear existing content
     document.execCommand('selectAll')
-    // Insert via execCommand (works for ProseMirror in most browsers)
+
     const ok = document.execCommand('insertText', false, text)
     if (!ok) {
-      // Fallback: native input event
-      const nativeSetter = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText')
-      if (nativeSetter?.set) nativeSetter.set.call(el, text)
+      // Fallback A: native setter + input event
+      try {
+        const setter = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'innerText')
+        if (setter?.set) setter.set.call(el, text)
+      } catch (_) {
+        el.innerText = text
+      }
       el.dispatchEvent(new InputEvent('input', {
         bubbles: true, cancelable: true,
         data: text, inputType: 'insertText',
       }))
     }
-    // Ensure ProseMirror's internal state is updated
+
+    // Fallback B: paste event (triggers Quill's paste handler)
+    const dt = new DataTransfer()
+    dt.setData('text/plain', text)
+    el.dispatchEvent(new ClipboardEvent('paste', {
+      bubbles: true, cancelable: true, clipboardData: dt,
+    }))
+
     el.dispatchEvent(new Event('input', { bubbles: true }))
   }
 
@@ -237,16 +285,16 @@
       // 2. Insert prompt
       insertPrompt(inputEl, req.prompt)
       addLog('プロンプトを挿入しました')
-      await delay(400)
+      await delay(500)  // Gemini needs a bit more time to register input
 
-      // 3. Get send button — brief retry if disabled
+      // 3. Get send button — brief retry if not yet enabled
       let sendBtn = getSendBtn()
       if (!sendBtn || sendBtn.disabled) {
         await delay(1_500)
         sendBtn = getSendBtn()
       }
       if (!sendBtn) throw new Error('送信ボタンが見つかりません')
-      if (sendBtn.disabled) throw new Error('送信ボタンが無効状態です（入力が空の可能性）')
+      if (sendBtn.disabled) throw new Error('送信ボタンが無効状態です（入力が反映されていない可能性）')
 
       // 4. Record state before sending
       const countBefore = getMessageCount()
@@ -255,11 +303,11 @@
       sendBtn.click()
       addLog('送信しました — 応答を待機中…')
 
-      // 6. Wait for response to start (new message appeared OR stop button visible)
+      // 6. Wait for response to start (new model-response appeared OR stop button visible)
       await waitUntil(
         () => getMessageCount() > countBefore || isStreamingActive(),
-        10_000,
-        '応答開始 (10秒)'
+        12_000,
+        '応答開始 (12秒)'
       )
       addLog('応答ストリーミング開始')
 
@@ -269,7 +317,7 @@
         60_000,
         '応答完了 (60秒)'
       )
-      await delay(500)  // brief DOM stabilization
+      await delay(600)  // Gemini does a brief post-stream render pass
 
       // 8. Extract response text
       const text = getLastAssistantMessage()
@@ -330,6 +378,6 @@
   // ── Init ──────────────────────────────────────────────────────────────────────
 
   setStatus('idle')
-  addLog('Claude Bridge 起動 ✓ — リクエストを待機中')
-  console.log('[Haku Bridge] Claude bridge v2.0 active ✓')
+  addLog('Gemini Bridge 起動 ✓ — リクエストを待機中')
+  console.log('[Haku Bridge] Gemini bridge v2.0 active ✓')
 })()
