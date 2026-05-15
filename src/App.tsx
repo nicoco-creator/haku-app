@@ -32,13 +32,10 @@ function ThemeSyncer() {
 
     setTheme(mode)
 
-    // CSS 変数を更新（全コンポーネントが自動追従）
+    // テキスト色の CSS 変数を更新（全コンポーネントが自動追従）
     const root = document.documentElement
     root.style.setProperty('--haku-text-primary',   mode === 'light' ? '#2D2A3E' : '#F0EEF8')
     root.style.setProperty('--haku-text-secondary', mode === 'light' ? '#7A7290' : '#A89FC0')
-
-    // html キャンバス背景を更新（body が transparent なのでここが実際の背景色）
-    root.style.backgroundColor = mode === 'light' ? '#F5F1EC' : '#1C1A2E'
 
     // PWA ステータスバー・theme-color
     const tc = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
