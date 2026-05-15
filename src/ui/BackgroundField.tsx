@@ -31,17 +31,19 @@ export function BackgroundField({ accentTint }: Props) {
         }
       `}</style>
 
-      {/* ── 明るい背景（常駐ベース層） ── */}
+      {/* ── 明るい背景（z:-2 でhtml背景の上に表示） ── */}
       <div
         aria-hidden="true"
         style={{
-          position: 'fixed', inset: 0, zIndex: -3,
+          position: 'fixed', inset: 0, zIndex: -2,
           background: 'radial-gradient(ellipse at 30% 40%, #FAF5EE 0%, #F5F1EC 50%, #EDE6DD 100%)',
           animation: 'bgShift 20s ease infinite alternate',
+          opacity: isDark ? 0 : 1,
+          transition: 'opacity 3s ease-in-out',
         }}
       />
 
-      {/* ── 暗い背景（上層：opacity で3秒フェード） ── */}
+      {/* ── 暗い背景（DOM順で light の上に重なる・opacity 3秒フェード） ── */}
       <div
         aria-hidden="true"
         style={{

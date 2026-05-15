@@ -37,6 +37,9 @@ function ThemeSyncer() {
     root.style.setProperty('--haku-text-primary',   mode === 'light' ? '#2D2A3E' : '#F0EEF8')
     root.style.setProperty('--haku-text-secondary', mode === 'light' ? '#7A7290' : '#A89FC0')
 
+    // html キャンバス背景を更新（body が transparent なのでここが実際の背景色）
+    root.style.backgroundColor = mode === 'light' ? '#F5F1EC' : '#1C1A2E'
+
     // PWA ステータスバー・theme-color
     const tc = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
     const sb = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]')

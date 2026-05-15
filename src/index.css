@@ -22,9 +22,16 @@
     min-height: 100svh;
   }
 
-  body {
+  /* キャンバス背景は html 側で管理（ThemeSyncer が JS で動的更新する）。
+     body を transparent にすることで BackgroundField の負 z-index 要素が
+     html 背景の上に描画されるようになる。 */
+  html {
     background-color: #1c1a2e;
-    color: #f0eef8;
+  }
+
+  body {
+    background-color: transparent;
+    color: var(--haku-text-primary, #f0eef8);
     font-family: 'Noto Sans JP', sans-serif;
     font-weight: 400;
     -webkit-font-smoothing: antialiased;
