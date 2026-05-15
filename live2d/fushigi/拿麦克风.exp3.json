@@ -1,0 +1,30 @@
+{
+    "Type": "Live2D Expression",
+    "Parameters": [
+        {
+            "Id": "Parammack",
+            "Value": 1.0,
+            "Blend": "Add"
+        },
+        {
+            "Id": "Parammack3",
+            "Value": 0.0,
+            "Blend": "Add"
+        },
+        {
+            "Id": "Parammack6",
+            "Value": 0.0,
+            "Blend": "Add"
+        },
+        {
+            "Id": "Param76dongzuozuoshoubi2",
+            "Value": 1.0,
+            "Blend": "Add"
+        },
+        {
+            "Id": "Param76dongzuozuoshoubi",
+            "Value": 0.0,
+            "Blend": "Add"
+        }
+    ]
+}

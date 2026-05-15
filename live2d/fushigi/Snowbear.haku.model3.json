@@ -1,0 +1,79 @@
+{
+  "Version": 3,
+  "FileReferences": {
+    "Moc": "Snowbear.moc3",
+    "Textures": [
+      "Snowbear.4096/texture_00.png",
+      "Snowbear.4096/texture_01.png",
+      "Snowbear.4096/texture_02.png",
+      "Snowbear.4096/texture_03.png",
+      "Snowbear.4096/texture_04.png",
+      "Snowbear.4096/texture_05.png",
+      "Snowbear.4096/texture_06.png",
+      "Snowbear.4096/texture_07.png",
+      "Snowbear.4096/texture_08.png",
+      "Snowbear.4096/texture_09.png",
+      "Snowbear.4096/texture_10.png",
+      "Snowbear.4096/texture_11.png",
+      "Snowbear.4096/texture_12.png",
+      "Snowbear.4096/texture_13.png",
+      "Snowbear.4096/texture_14.png",
+      "Snowbear.4096/texture_15.png",
+      "Snowbear.4096/texture_16.png",
+      "Snowbear.4096/texture_17.png",
+      "Snowbear.4096/texture_18.png"
+    ],
+    "Physics": "Snowbear.physics3.json",
+    "DisplayInfo": "Snowbear.cdi3.json",
+    "Expressions": [
+      { "Name": "脸红",       "File": "脸红.exp3.json" },
+      { "Name": "星星眼",     "File": "星星眼.exp3.json" },
+      { "Name": "星星眼扩展", "File": "星星眼扩展.exp3.json" },
+      { "Name": "泪眼汪汪",   "File": "泪眼汪汪.exp3.json" },
+      { "Name": "爱心眼",     "File": "爱心眼.exp3.json" },
+      { "Name": "爱心眼扩展1","File": "爱心眼扩展1.exp3.json" },
+      { "Name": "爱心眼扩展2","File": "爱心眼扩展2.exp3.json" },
+      { "Name": "鼓嘴",       "File": "鼓嘴.exp3.json" },
+      { "Name": "失去高光",   "File": "失去高光.exp3.json" },
+      { "Name": "瞳孔熄灯",   "File": "瞳孔熄灯.exp3.json" },
+      { "Name": "脸黑",       "File": "脸黑.exp3.json" },
+      { "Name": "光环消失",   "File": "光环消失.exp3.json" },
+      { "Name": "前倾",       "File": "前倾.exp3.json" },
+      { "Name": "拿手柄",     "File": "拿手柄.exp3.json" },
+      { "Name": "拿麦克风",   "File": "拿麦克风.exp3.json" },
+      { "Name": "L手柄",      "File": "L手柄.exp3.json" },
+      { "Name": "R手柄",      "File": "R手柄.exp3.json" },
+      { "Name": "侧发切换",   "File": "侧发切换.exp3.json" },
+      { "Name": "后发切换",   "File": "后发切换.exp3.json" },
+      { "Name": "马尾切换",   "File": "马尾切换.exp3.json" },
+      { "Name": "玩手机",     "File": "玩手机.exp3.json" },
+      { "Name": "眼泪出现",   "File": "眼泪出现.exp3.json" },
+      { "Name": "大小变-中",  "File": "大小变-中.exp3.json" },
+      { "Name": "大小变-小",  "File": "大小变-小.exp3.json" }
+    ],
+    "Motions": {
+      "Idle": [
+        { "File": "睡觉.motion3.json",     "FadeInTime": 1.0, "FadeOutTime": 1.0 },
+        { "File": "流泪动画.motion3.json", "FadeInTime": 0.5, "FadeOutTime": 0.5 }
+      ],
+      "TapBody": [
+        { "File": "流泪动画.motion3.json", "FadeInTime": 0.5, "FadeOutTime": 0.5 }
+      ]
+    }
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": []
+    },
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeLOpen",
+        "ParamEyeROpen"
+      ]
+    }
+  ]
+}
