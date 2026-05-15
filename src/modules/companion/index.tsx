@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { FushigiOrb } from '../../ui/FushigiOrb'
 import { colors, getAccent, type Mood } from '../../ui/tokens'
 import { chatLogs, type ChatLog } from '../../core/db'
-import { askAI } from '../../core/ai-bridge'
+import { openAIChat, readResponseFromClipboard } from '../../core/ai-bridge'
 import { useAppStore } from '../../core/store'
 import { calcPositiveDensity } from '../../core/lexicon'
+import { FUSHIGI_PROTOCOL } from '../../core/protocol'
 import '../../ui/transitions.css'
 
 // ── constants ─────────────────────────────────────────────────────────────────
@@ -15,34 +16,6 @@ const MAX_HISTORY      = 40
 const CONTEXT_LIMIT    = 10
 const SILENCE_RATIO    = 0.5
 const SILENCE_DURATION = 5000
-const SUMMARY_KEY      = 'haku_chat_summary'
-
-// ── types ─────────────────────────────────────────────────────────────────────
-
-interface ChatSummary {
-  date: string  // YYYY-MM-DD (summarized date)
-  text: string
-}
-
-// ── date helpers ──────────────────────────────────────────────────────────────
-
-function yesterdayStr(): string {
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
-  return d.toISOString().slice(0, 10)
-}
-
-// ── summary storage ───────────────────────────────────────────────────────────
-
-function getSavedSummary(): ChatSummary | null {
-  const raw = localStorage.getItem(SUMMARY_KEY)
-  if (!raw) return null
-  try { return JSON.parse(raw) as ChatSummary } catch { return null }
-}
-
-function persistSummary(s: ChatSummary): void {
-  localStorage.setItem(SUMMARY_KEY, JSON.stringify(s))
-}
 
 // ── intelligence helpers ──────────────────────────────────────────────────────
 
@@ -55,7 +28,6 @@ function calcAvgUserChars(allLogs: ChatLog[]): number {
   return msgs.reduce((s, m) => s + m.text.length, 0) / msgs.length
 }
 
-// テンション検知：ポジティブ密度 > 0.6 または「！」を含む + alertLevel >= 1
 function isTensionAlert(text: string, alertLevel: number): boolean {
   if (alertLevel < 1) return false
   return calcPositiveDensity(text) > 0.6 || text.includes('！')
@@ -63,52 +35,19 @@ function isTensionAlert(text: string, alertLevel: number): boolean {
 
 // ── prompt builders ───────────────────────────────────────────────────────────
 
-function summaryContext(summary: ChatSummary | null): string {
-  if (!summary || summary.date !== yesterdayStr()) return ''
-  return `【前日の記録】\n${summary.text}\n\n`
-}
-
-function buildPrompt(history: ChatLog[], userText: string, summary: ChatSummary | null): string {
-  const prefix = summaryContext(summary)
+function buildPrompt(history: ChatLog[], userText: string): string {
   const recent = history.slice(-CONTEXT_LIMIT)
   if (recent.length === 0) {
-    return `${prefix}Hakuが話しかけてきました。\n\nHaku: ${userText}\n\nフシギちゃんとして、短く返答してください（1〜2文程度）。`
+    return `${FUSHIGI_PROTOCOL}\n\n---\n\nHakuが話しかけてきました。\n\nHaku: ${userText}\n\nフシギちゃんとして、短く返答してください（1〜2文程度）。`
   }
   const lines = recent
     .map((m) => (m.role === 'user' ? `Haku: ${m.text}` : `フシギちゃん: ${m.text}`))
     .join('\n')
-  return `${prefix}以下の会話に続けてフシギちゃんとして返答してください（1〜2文）。\n\n${lines}\nHaku: ${userText}\n\nフシギちゃん:`
+  return `${FUSHIGI_PROTOCOL}\n\n---\n\n以下の会話に続けてフシギちゃんとして返答してください（1〜2文）。\n\n${lines}\nHaku: ${userText}\n\nフシギちゃん:`
 }
 
-// テンション高 → 眠れているか確認方向への返答を促す
-function buildTensionPrompt(userText: string, summary: ChatSummary | null): string {
-  const prefix = summaryContext(summary)
-  return `${prefix}Hakuのテンションが高い状態です。フシギちゃんのプロトコル・ルール3を特に意識してください。「今楽しいですか？」ではなく「最後にちゃんと眠れたのはいつですか？」という方向で、1〜2文で返答してください。\n\nHaku: ${userText}\n\nフシギちゃん:`
-}
-
-function buildDailySummaryPrompt(dayLogs: ChatLog[]): string {
-  const lines = dayLogs
-    .map((m) => (m.role === 'user' ? `Haku: ${m.text}` : `フシギちゃん: ${m.text}`))
-    .join('\n')
-  return `以下の会話を200字以内で要約してください。形式は厳守してください。\n\nHakuの状態：（一文）\n最後に話したこと：（一文）\n\n---\n${lines}`
-}
-
-// ── daily summary generation（バックグラウンド・非クリティカル） ─────────────
-
-async function tryGenerateSummary(): Promise<void> {
-  const yesterday = yesterdayStr()
-  if (getSavedSummary()?.date === yesterday) return
-
-  const all = await chatLogs.list()
-  const dayLogs = all.filter((m) => m.createdAt.startsWith(yesterday))
-  if (dayLogs.length === 0) return
-
-  try {
-    const text = await askAI(buildDailySummaryPrompt(dayLogs), { skipProtocol: true })
-    persistSummary({ date: yesterday, text: text.trim().slice(0, 300) })
-  } catch {
-    // サイレントフェイル — 記憶保持は補助的機能
-  }
+function buildTensionPrompt(userText: string): string {
+  return `${FUSHIGI_PROTOCOL}\n\n---\n\nHakuのテンションが高い状態です。ルール3を特に意識してください。「最後にちゃんと眠れたのはいつですか？」という方向で、1〜2文で返答してください。\n\nHaku: ${userText}\n\nフシギちゃん:`
 }
 
 // ── Bubbles ───────────────────────────────────────────────────────────────────
@@ -149,13 +88,13 @@ function UserBubble({ text }: { text: string }) {
   )
 }
 
-function TypingBubble() {
+function WaitingBubble() {
   return (
     <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
       <style>{`@keyframes dotPulse{0%,80%,100%{opacity:.3}40%{opacity:1}}`}</style>
       <div style={{
-        background: 'rgba(168,200,232,0.12)',
-        border: '1px solid rgba(168,200,232,0.20)',
+        background: 'rgba(168,200,232,0.08)',
+        border: '1px solid rgba(168,200,232,0.15)',
         borderRadius: 18, borderTopLeftRadius: 4,
         padding: '12px 16px',
         display: 'flex', alignItems: 'center', gap: 4,
@@ -182,12 +121,16 @@ export function CompanionPage() {
 
   const [logs,          setLogs]          = useState<ChatLog[]>([])
   const [input,         setInput]         = useState('')
-  const [loading,       setLoading]       = useState(false)
+  const [waitingPaste,  setWaitingPaste]  = useState(false)
+  const [showManual,    setShowManual]    = useState(false)
+  const [manualText,    setManualText]    = useState('')
   const [silenceActive, setSilenceActive] = useState(false)
   const [avgUserChars,  setAvgUserChars]  = useState(0)
+  // pendingPrompt はClaudeに送ったプロンプトを保持（「再び開く」用）
+  const [pendingPrompt, setPendingPrompt] = useState<string>('')
 
-  const scrollRef       = useRef<HTMLDivElement>(null)
-  const hasTriedSummary = useRef(false)
+  const scrollRef    = useRef<HTMLDivElement>(null)
+  const manualRef    = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     setBackgroundTint(getAccent('blue'))
@@ -201,71 +144,76 @@ export function CompanionPage() {
     })
   }, [])
 
-  // 1日1回: 前日の会話を要約してlocalStorageに保存（2秒後・1セッション1回）
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (hasTriedSummary.current) return
-      hasTriedSummary.current = true
-      void tryGenerateSummary()
-    }, 2000)
-    return () => clearTimeout(t)
-  }, [])
-
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [logs, loading, silenceActive])
+  }, [logs, waitingPaste, silenceActive])
 
   const latestFushigiMsg = [...logs].reverse().find((l) => l.role === 'fushigi')?.text ?? GREETING
   const fushigiMood: Mood = alertLevel >= 3 ? 'worried' : alertLevel >= 1 ? 'sleepy' : 'default'
 
+  // ── 送信 ─────────────────────────────────────────────────────────────────────
   const handleSend = async () => {
     const text = input.trim()
-    if (!text || loading) return
+    if (!text || waitingPaste) return
     setInput('')
-    setSilenceActive(false) // 前の沈黙をクリア
+    setSilenceActive(false)
 
-    // ユーザー発言を保存
     const userEntry: Omit<ChatLog, 'id'> = { role: 'user', text, createdAt: new Date().toISOString() }
     const userId   = await chatLogs.add(userEntry)
     const snapshot = [...logs]
     setLogs((prev) => [...prev, { ...userEntry, id: userId }])
 
-    // ── 沈黙の知性: 直近7日平均の50%以下 → フシギちゃんは沈黙 ───────────────
+    // 沈黙の知性
     if (avgUserChars > 0 && text.length <= avgUserChars * SILENCE_RATIO) {
       setSilenceActive(true)
       setTimeout(() => setSilenceActive(false), SILENCE_DURATION)
-      return  // chatLogsにフシギちゃん発言なし
+      return
     }
 
-    // ── AI応答フロー ──────────────────────────────────────────────────────────
-    setLoading(true)
-    const summary = getSavedSummary()
+    // プロンプト組み立て → Claudeタブを開く
+    const prompt = isTensionAlert(text, alertLevel)
+      ? buildTensionPrompt(text)
+      : buildPrompt(snapshot, text)
 
+    setPendingPrompt(prompt)
+    setWaitingPaste(true)
+    setShowManual(false)
+    setManualText('')
+    openAIChat(prompt, 'claude')
+  }
+
+  // ── 回答を受け取る（クリップボード） ────────────────────────────────────────
+  const handlePaste = async () => {
     try {
-      let aiText: string
-
-      if (isTensionAlert(text, alertLevel)) {
-        // ── テンション検知: 睡眠・休息を確認する方向へ誘導 ───────────────────
-        aiText = await askAI(buildTensionPrompt(text, summary))
-      } else {
-        aiText = await askAI(buildPrompt(snapshot, text, summary))
-      }
-
-      const fEntry: Omit<ChatLog, 'id'> = { role: 'fushigi', text: aiText, createdAt: new Date().toISOString() }
-      const fId = await chatLogs.add(fEntry)
-      setLogs((prev) => [...prev, { ...fEntry, id: fId }])
+      const text = await readResponseFromClipboard()
+      await saveAIReply(text)
     } catch {
-      const fEntry: Omit<ChatLog, 'id'> = {
-        role: 'fushigi',
-        text: 'ごめんなさい、うまく届きませんでした。もう一度、試してみますか？',
-        createdAt: new Date().toISOString(),
-      }
-      const fId = await chatLogs.add(fEntry)
-      setLogs((prev) => [...prev, { ...fEntry, id: fId }])
-    } finally {
-      setLoading(false)
+      // 失敗 → 手動テキストエリアを表示
+      setShowManual(true)
+      setTimeout(() => manualRef.current?.focus(), 100)
     }
+  }
+
+  // ── 手動入力で送信 ────────────────────────────────────────────────────────────
+  const handleManualSubmit = async () => {
+    const text = manualText.trim()
+    if (!text) return
+    await saveAIReply(text)
+    setManualText('')
+    setShowManual(false)
+  }
+
+  // ── フシギちゃんの返答をDBに保存 ──────────────────────────────────────────────
+  const saveAIReply = async (text: string) => {
+    const fEntry: Omit<ChatLog, 'id'> = {
+      role: 'fushigi', text, createdAt: new Date().toISOString(),
+    }
+    const fId = await chatLogs.add(fEntry)
+    setLogs((prev) => [...prev, { ...fEntry, id: fId }])
+    setWaitingPaste(false)
+    setShowManual(false)
+    setPendingPrompt('')
   }
 
   const handleKeyDown = (e: { key: string; shiftKey: boolean; preventDefault: () => void }) => {
@@ -276,7 +224,7 @@ export function CompanionPage() {
   }
 
   const accentColor = colors.accent.blue
-  const canSend     = !!input.trim() && !loading
+  const canSend     = !!input.trim() && !waitingPaste
 
   const textareaStyle: CSSProperties = {
     flex: 1,
@@ -289,19 +237,6 @@ export function CompanionPage() {
     fontSize: 14, lineHeight: 1.6,
     resize: 'none', outline: 'none',
     minHeight: 44, maxHeight: 120,
-  }
-
-  const sendBtnStyle: CSSProperties = {
-    flexShrink: 0,
-    width: 48, height: 48, borderRadius: '50%',
-    border: 'none',
-    background: canSend ? accentColor : 'rgba(255,255,255,0.10)',
-    color: canSend ? '#1C1A2E' : colors.text.secondary,
-    cursor: canSend ? 'pointer' : 'not-allowed',
-    fontSize: 18, fontWeight: 700,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    transition: 'background 0.2s, color 0.2s',
-    alignSelf: 'flex-end',
   }
 
   return (
@@ -334,7 +269,7 @@ export function CompanionPage() {
         </button>
       </header>
 
-      {/* フシギちゃん Orb（上部 1/3） */}
+      {/* フシギちゃん Orb */}
       <div style={{
         flexShrink: 0,
         display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -358,28 +293,154 @@ export function CompanionPage() {
             ? <FushigiBubble key={log.id} text={log.text} />
             : <UserBubble    key={log.id} text={log.text} />
         )}
-        {loading       && <TypingBubble />}
+        {waitingPaste  && <WaitingBubble />}
         {silenceActive && <FushigiBubble text="……。" />}
       </div>
 
-      {/* 入力欄 */}
-      <div style={{
-        flexShrink: 0,
-        display: 'flex', alignItems: 'flex-end', gap: 8,
-        padding: '8px 0 20px',
-      }}>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="フシギちゃんに話しかける…"
-          rows={1}
-          style={textareaStyle}
-        />
-        <button onClick={() => void handleSend()} disabled={!canSend} style={sendBtnStyle}>
-          ↑
-        </button>
-      </div>
+      {/* ── 貼り付けエリア（回答待ち中に表示） ── */}
+      {waitingPaste && (
+        <div style={{
+          flexShrink: 0,
+          padding: '10px 0 4px',
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          {/* 再度開くリンク */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => openAIChat(pendingPrompt, 'claude')}
+              style={{
+                flex: 1, padding: '8px 0',
+                background: `${colors.accent.indigo}18`,
+                border: `1px solid ${colors.accent.indigo}44`,
+                borderRadius: 12, color: colors.text.secondary,
+                fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              Claude を再度開く
+            </button>
+            <button
+              onClick={() => { setWaitingPaste(false); setShowManual(false) }}
+              style={{
+                padding: '8px 14px',
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 12, color: colors.accent.ash,
+                fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              キャンセル
+            </button>
+          </div>
+
+          {/* メインの貼り付けボタン */}
+          <button
+            onClick={handlePaste}
+            style={{
+              padding: '14px 0',
+              background: `${colors.accent.blush}22`,
+              border: `1px solid ${colors.accent.blush}66`,
+              borderRadius: 14, color: colors.accent.blush,
+              fontSize: 15, fontWeight: 700, cursor: 'pointer',
+              fontFamily: 'inherit',
+              WebkitTapHighlightColor: 'transparent',
+            }}
+          >
+            【2】コピーした回答を貼り付ける
+          </button>
+
+          {/* 手動フォールバック */}
+          <button
+            onClick={() => {
+              setShowManual(v => !v)
+              if (!showManual) setTimeout(() => manualRef.current?.focus(), 100)
+            }}
+            style={{
+              background: 'transparent', border: 'none',
+              color: colors.text.secondary, cursor: 'pointer',
+              fontSize: 12, fontFamily: 'inherit', padding: '2px 0',
+              WebkitTapHighlightColor: 'transparent',
+              textAlign: 'left',
+            }}
+          >
+            {showManual ? '▾ 手動入力を閉じる' : '▸ うまく貼り付けられない場合'}
+          </button>
+
+          {showManual && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <textarea
+                ref={manualRef}
+                value={manualText}
+                onChange={e => setManualText(e.target.value)}
+                rows={4}
+                placeholder="フシギちゃんの返答をここに貼り付け…"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.14)',
+                  borderRadius: 12, color: colors.text.primary,
+                  fontSize: 13, padding: '10px 12px',
+                  fontFamily: 'inherit', resize: 'none', outline: 'none',
+                  lineHeight: 1.6,
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={handleManualSubmit}
+                  disabled={!manualText.trim()}
+                  style={{
+                    padding: '7px 18px',
+                    background: manualText.trim() ? colors.accent.indigo : 'rgba(255,255,255,0.08)',
+                    border: 'none', borderRadius: 20,
+                    color: manualText.trim() ? '#fff' : colors.text.secondary,
+                    fontSize: 12, cursor: manualText.trim() ? 'pointer' : 'default',
+                    fontFamily: 'inherit',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
+                >
+                  この返答を使う
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 入力欄（回答待ち中は隠す） ── */}
+      {!waitingPaste && (
+        <div style={{
+          flexShrink: 0,
+          display: 'flex', alignItems: 'flex-end', gap: 8,
+          padding: '8px 0 20px',
+        }}>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="フシギちゃんに話しかける…"
+            rows={1}
+            style={textareaStyle}
+          />
+          <button
+            onClick={() => void handleSend()}
+            disabled={!canSend}
+            style={{
+              flexShrink: 0,
+              width: 48, height: 48, borderRadius: '50%',
+              border: 'none',
+              background: canSend ? accentColor : 'rgba(255,255,255,0.10)',
+              color: canSend ? '#1C1A2E' : colors.text.secondary,
+              cursor: canSend ? 'pointer' : 'not-allowed',
+              fontSize: 18, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.2s, color 0.2s',
+              alignSelf: 'flex-end',
+            }}
+          >
+            ↑
+          </button>
+        </div>
+      )}
     </div>
   )
 }

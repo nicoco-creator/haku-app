@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { BackgroundField }  from './ui/BackgroundField'
-import { AIBridgeOverlay } from './ui/AIBridgeOverlay'
+import { AIBridgePanel }   from './ui/AIBridgePanel'
 import { syncAlertLevel }   from './core/metrics'
 import { HomePage }         from './modules/home'
 import { StudyPage }        from './modules/study'
@@ -35,8 +35,8 @@ function AppContent() {
           <Route path="/seen"      element={<SeenPage />} />
         </Routes>
       </div>
-      {/* AI manual-receive overlay — hidden on /vault (isolation policy) */}
-      <AIBridgeOverlay />
+      {/* AI magic-button panel — hidden on /vault and /companion (isolation policy) */}
+      <AIBridgePanel />
     </>
   )
 }

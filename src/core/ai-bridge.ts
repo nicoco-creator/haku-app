@@ -1,141 +1,142 @@
 /**
- * AI Bridge — localStorage経由でUserscriptとメッセージをやり取りする。
+ * AI Bridge — 「魔法のボタン」方式
  *
- * ⚠️  VAULT ISOLATION: このファイルは src/modules/vault/* から絶対にimportしないこと。
- *     「裁かない倉庫」モジュールのデータはAIに渡さない（CLAUDE.md 絶対制約）。
- *     ESLintルール（no-restricted-imports）でも強制している。
+ * 仕組み：
+ *   1. openAIChat(prompt) でClaudeタブを開き、プロンプトをクリップボードにコピー
+ *   2. ユーザーがClaudeで回答をコピーしてアプリに戻る
+ *   3. readResponseFromClipboard() でクリップボードを読む
+ *
+ * askAI(prompt) は他モジュール（study/emotion/journal/waiting）との互換シムとして残し、
+ * 内部でopenAIChat() + AIBridgePanel（グローバルUI）に委譲する。
+ *
+ * ⚠️ VAULT ISOLATION: このファイルは src/modules/vault/* から絶対にimportしないこと。
  */
 
 import { FUSHIGI_PROTOCOL } from './protocol'
 
 export type AIService = 'claude' | 'gemini' | 'chatgpt'
 
-export interface AIRequest {
-  id: string
-  prompt: string
+// ── 1. タブを開く + クリップボードにコピー ────────────────────────────────────
+
+/**
+ * AIサービスの新しいタブでプロンプトを開く。
+ * - URLの ?q= パラメータでプロンプトを渡す（対応していない場合もあるがベストエフォート）
+ * - 同時にクリップボードにもコピーする（iOS Safariでの貼り付け対応）
+ */
+export function openAIChat(prompt: string, service: AIService = 'claude'): void {
+  // クリップボードコピー（失敗してもサイレント）
+  navigator.clipboard.writeText(prompt).catch(() => {})
+
+  const encoded = encodeURIComponent(prompt)
+  const url =
+    service === 'gemini'
+      ? `https://gemini.google.com/app?q=${encoded}`
+      : `https://claude.ai/new?q=${encoded}`
+
+  window.open(url, '_blank', 'noopener')
+}
+
+// ── 2. クリップボードから回答を読む ──────────────────────────────────────────
+
+/**
+ * クリップボードのテキストを返す。
+ * iOS Safari 13.4以降で動作。失敗時はthrowするので呼び出し元でcatchすること。
+ */
+export async function readResponseFromClipboard(): Promise<string> {
+  const text = await navigator.clipboard.readText()
+  if (!text.trim()) throw new Error('クリップボードが空です')
+  return text.trim()
+}
+
+// ── 3. グローバルな保留状態（askAI互換シム用） ───────────────────────────────
+
+interface AIPending {
+  id:      string
+  prompt:  string
   service: AIService
-  status: 'pending'
-  timestamp: number
+  resolve: (text: string) => void
+  reject:  (err: Error)   => void
 }
 
-export interface AIResponse {
-  id: string
-  text: string
-  status: 'done' | 'error'
-  timestamp: number
+let _pending: AIPending | null = null
+const _listeners               = new Set<() => void>()
+
+function _notify() {
+  _listeners.forEach(fn => fn())
 }
 
-const POLL_INTERVAL_MS = 500
-const TIMEOUT_MS       = 300_000  // 5 min — manual overlay provides recovery before this fires
-const REQUEST_KEY      = 'ai_request'
-const RESPONSE_KEY     = 'ai_response'
+/** AIBridgePanelがsubscribeするためのhook */
+export function subscribeAI(fn: () => void): () => void {
+  _listeners.add(fn)
+  return () => _listeners.delete(fn)
+}
 
+export interface AIPendingInfo {
+  id:      string
+  prompt:  string
+  service: AIService
+}
+
+/** 現在保留中のリクエストを返す（AIBridgePanel 用） */
+export function getPendingAI(): AIPendingInfo | null {
+  if (!_pending) return null
+  return { id: _pending.id, prompt: _pending.prompt, service: _pending.service }
+}
+
+/** AIBridgePanelから呼ぶ：貼り付けた回答でPromiseを解決する */
+export function submitAIResponse(text: string): void {
+  if (!_pending) return
+  const { resolve } = _pending
+  _pending = null
+  _notify()
+  resolve(text)
+}
+
+/** AIBridgePanelから呼ぶ：キャンセルしてPromiseを棄却する */
+export function cancelAIRequest(): void {
+  if (!_pending) return
+  const { reject } = _pending
+  _pending = null
+  _notify()
+  reject(new Error('キャンセルされました'))
+}
+
+// ── 4. askAI — 既存モジュール用互換シム ──────────────────────────────────────
+
+/**
+ * study / emotion / journal / waiting モジュールが使う互換API。
+ * 内部で openAIChat() を呼んでClaudeタブを開き、
+ * グローバルな AIBridgePanel がユーザーの貼り付けを待ってPromiseを解決する。
+ *
+ * companion モジュールはこの関数を使わず openAIChat() を直接呼ぶこと。
+ */
 export function askAI(
-  prompt: string,
-  options?: { service?: AIService; skipProtocol?: boolean }
+  prompt:   string,
+  options?: { service?: AIService; skipProtocol?: boolean },
 ): Promise<string> {
-  // Runtime vault isolation: /vault pages must never reach the AI.
   if (typeof window !== 'undefined' && window.location.pathname.includes('/vault')) {
-    return Promise.reject(new Error('⛔ askAI は /vault から呼び出せません — Vault Isolation Policy'))
+    return Promise.reject(
+      new Error('⛔ askAI は /vault から呼び出せません — Vault Isolation Policy'),
+    )
   }
 
-  const service      = options?.service ?? 'claude'
+  const service      = options?.service      ?? 'claude'
   const skipProtocol = options?.skipProtocol ?? false
-
-  const fullPrompt = skipProtocol
+  const fullPrompt   = skipProtocol
     ? prompt
     : `${FUSHIGI_PROTOCOL}\n\n---\n\n${prompt}`
 
-  const request: AIRequest = {
-    id:        crypto.randomUUID(),
-    prompt:    fullPrompt,
-    service,
-    status:    'pending',
-    timestamp: Date.now(),
+  // Claudeタブを開いてクリップボードにもコピー
+  openAIChat(fullPrompt, service)
+
+  // 前のリクエストをキャンセル
+  if (_pending) {
+    _pending.reject(new Error('新しいリクエストで上書きされました'))
   }
 
-  localStorage.setItem(REQUEST_KEY, JSON.stringify(request))
-
+  // AIBridgePanelが submitAIResponse() を呼ぶまで待機
   return new Promise<string>((resolve, reject) => {
-    const startedAt = Date.now()
-
-    const tick = () => {
-      if (Date.now() - startedAt > TIMEOUT_MS) {
-        reject(new Error('AI bridge timeout (60s) — Userscriptが応答しませんでした'))
-        return
-      }
-
-      const raw = localStorage.getItem(RESPONSE_KEY)
-      if (raw) {
-        try {
-          const resp: AIResponse = JSON.parse(raw)
-          if (resp.id === request.id) {
-            if (resp.status === 'done') {
-              resolve(resp.text)
-              return
-            }
-            if (resp.status === 'error') {
-              reject(new Error(`AI bridge error: ${resp.text}`))
-              return
-            }
-          }
-        } catch {
-          // malformed JSON — keep polling
-        }
-      }
-
-      setTimeout(tick, POLL_INTERVAL_MS)
-    }
-
-    setTimeout(tick, POLL_INTERVAL_MS)
+    _pending = { id: crypto.randomUUID(), prompt: fullPrompt, service, resolve, reject }
+    _notify()
   })
-}
-
-/** 手動でレスポンスを書き込む（AIBridgeOverlay から呼ぶ） */
-export function writeManualResponse(
-  requestId: string,
-  text:      string,
-  status:    'done' | 'error' = 'done',
-): void {
-  const resp: AIResponse = {
-    id:        requestId,
-    text,
-    status,
-    timestamp: Date.now(),
-  }
-  localStorage.setItem(RESPONSE_KEY, JSON.stringify(resp))
-}
-
-/** 現在のペンディングリクエストを返す（UI表示用）
- *  ai_response に同じIDの回答が既にある場合は null を返す（処理済みと見なす）
- */
-export function getPendingRequest(): AIRequest | null {
-  const raw = localStorage.getItem(REQUEST_KEY)
-  if (!raw) return null
-  try {
-    const r: AIRequest = JSON.parse(raw)
-    if (r.status !== 'pending') return null
-    // If a matching response is already in storage, the request is effectively done
-    const respRaw = localStorage.getItem(RESPONSE_KEY)
-    if (respRaw) {
-      try {
-        const resp: AIResponse = JSON.parse(respRaw)
-        if (resp.id === r.id) return null
-      } catch { /* ignore */ }
-    }
-    return r
-  } catch {
-    return null
-  }
-}
-
-/** 最後のレスポンスを返す（UI表示用） */
-export function getLastResponse(): AIResponse | null {
-  const raw = localStorage.getItem(RESPONSE_KEY)
-  if (!raw) return null
-  try {
-    return JSON.parse(raw) as AIResponse
-  } catch {
-    return null
-  }
 }
