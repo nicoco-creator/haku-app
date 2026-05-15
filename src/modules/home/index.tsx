@@ -65,7 +65,7 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
         <p style={{
           fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
           fontSize: 'clamp(12px, 3vw, 14px)',
-          color: '#A89FC0', textAlign: 'center', margin: 0, lineHeight: 1.8,
+          color: colors.text.secondary, textAlign: 'center', margin: 0, lineHeight: 1.8,
         }}>
           最近、かなりアクセル踏んでます。最後にちゃんと休んだの、いつでしたっけ。
         </p>
@@ -76,13 +76,13 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
         <GlassCard size="sm" style={{ maxWidth: 320, width: '100%', textAlign: 'center' }}>
           <p style={{
             fontFamily: "'Noto Sans JP', sans-serif", fontSize: 11,
-            color: '#A89FC0', margin: '0 0 4px',
+            color: colors.text.secondary, margin: '0 0 4px',
           }}>
             {memoryCard.date}
           </p>
           <p style={{
             fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
-            fontSize: 13, color: '#F0EEF8', margin: 0, lineHeight: 1.7,
+            fontSize: 13, color: colors.text.primary, margin: 0, lineHeight: 1.7,
           }}>
             {memoryCard.content.split(/[。\n]/)[0]}
           </p>
@@ -187,7 +187,7 @@ export function HomePage() {
               <span
                 style={{
                   fontSize: '11px',
-                  color: '#A89FC0',
+                  color: colors.text.secondary,
                   textAlign: 'center',
                   lineHeight: 1.4,
                   wordBreak: 'keep-all',
@@ -219,7 +219,7 @@ export function HomePage() {
               className="flex items-center gap-4"
             >
               <span style={{ fontSize: '30px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
-              <span style={{ fontSize: '14px', color: '#F0EEF8', fontWeight: 400 }}>{mod.label}</span>
+              <span style={{ fontSize: '14px', color: colors.text.primary, fontWeight: 400 }}>{mod.label}</span>
               {mod.to === '/study' && studyQuota && (
                 <span style={{ marginLeft: 'auto', fontSize: 11, color: colors.accent.indigo, whiteSpace: 'nowrap' }}>
                   {studyQuota.dailyLoad}章/日
@@ -247,7 +247,7 @@ export function HomePage() {
               className="flex items-center gap-4"
             >
               <span style={{ fontSize: '30px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
-              <span style={{ fontSize: '14px', color: '#F0EEF8', fontWeight: 400 }}>{mod.label}</span>
+              <span style={{ fontSize: '14px', color: colors.text.primary, fontWeight: 400 }}>{mod.label}</span>
             </GlassCard>
           ))}
         </div>

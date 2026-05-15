@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { glassCard, type Mood } from './tokens'
+import { glassCard, colors, type Mood } from './tokens'
 import { useAppStore } from '../core/store'
 
 const BASE = import.meta.env.BASE_URL
@@ -53,6 +53,8 @@ const SMILE_FILTER = 'brightness(1.08) saturate(1.15) hue-rotate(-5deg)'
 export function FushigiOrb({ mode, mood = 'default', message }: Props) {
   const navigate   = useNavigate()
   const alertLevel = useAppStore((s) => s.alertLevel)
+  const theme      = useAppStore((s) => s.theme)
+  const isDark     = theme === 'dark'
   const canvasRef  = useRef<HTMLCanvasElement>(null)
   const orbRef    = useRef<HTMLDivElement>(null)
   const imgRef    = useRef<HTMLImageElement>(null)
@@ -147,8 +149,8 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
         aria-label="ホームに戻る"
         style={{
           width: 56, height: 56, borderRadius: '50%',
-          border: '1px solid rgba(255,255,255,0.2)',
-          background: 'rgba(255,255,255,0.08)',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.85)'}`,
+          background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.55)',
           backdropFilter: foggedFilter,
           WebkitBackdropFilter: foggedFilter,
           cursor: 'pointer', overflow: 'hidden',
@@ -174,7 +176,7 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
         ref={orbRef}
         onPointerMove={handlePointerMove}
         style={{
-          ...glassCard,
+          ...(isDark ? glassCard : { ...glassCard, background: 'rgba(255,255,255,0.55)', boxShadow: '0 8px 32px rgba(160,140,120,0.18), inset 0 1px 0 rgba(255,255,255,0.7)' }),
           backdropFilter: alertLevel >= 2 ? 'blur(28px) brightness(0.92)' : glassCard.backdropFilter,
           WebkitBackdropFilter: alertLevel >= 2 ? 'blur(28px) brightness(0.92)' : glassCard.WebkitBackdropFilter,
           position: 'relative',
@@ -212,9 +214,15 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
           fontFamily: "'Noto Serif JP', serif",
           fontWeight: 300,
           fontSize: 'clamp(13px, 3.5vw, 16px)',
-          color: '#F0EEF8',
+          color: colors.text.primary,
           textAlign: 'center',
           margin: 0, lineHeight: 1.8, maxWidth: '280px', minHeight: '3.2em',
+          // 明るいモード時は読みやすさのため気泡背景を追加
+          ...(isDark ? {} : {
+            background: 'rgba(168,200,232,0.35)',
+            borderRadius: 14,
+            padding: '8px 16px',
+          }),
         }}>
           <TypewriterText text={message} />
         </p>

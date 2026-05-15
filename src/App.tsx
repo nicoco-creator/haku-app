@@ -4,6 +4,7 @@ import { BackgroundField }  from './ui/BackgroundField'
 import { AIBridgePanel }   from './ui/AIBridgePanel'
 import { syncAlertLevel }   from './core/metrics'
 import { notif }            from './core/notifications'
+import { useAppStore }      from './core/store'
 import { HomePage }         from './modules/home'
 import { StudyPage }        from './modules/study'
 import { EmotionPage }      from './modules/emotion'
@@ -17,10 +18,40 @@ import { SettingsPage }     from './modules/settings'
 import { SeenPage }         from './modules/seen'
 import './ui/transitions.css'
 
+// ── テーマ・CSS変数・メタタグを一括管理 ────────────────────────────────────────
+function ThemeSyncer() {
+  const location   = useLocation()
+  const alertLevel = useAppStore((s) => s.alertLevel)
+  const setTheme   = useAppStore((s) => s.setTheme)
+
+  useEffect(() => {
+    const path    = location.pathname
+    const isDark  = path === '/study' || path.startsWith('/study/')
+                  || path === '/vault' || path.startsWith('/vault/')
+    const mode    = isDark || alertLevel >= 2 ? 'dark' : 'light'
+
+    setTheme(mode)
+
+    // CSS 変数を更新（全コンポーネントが自動追従）
+    const root = document.documentElement
+    root.style.setProperty('--haku-text-primary',   mode === 'light' ? '#2D2A3E' : '#F0EEF8')
+    root.style.setProperty('--haku-text-secondary', mode === 'light' ? '#7A7290' : '#A89FC0')
+
+    // PWA ステータスバー・theme-color
+    const tc = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    const sb = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]')
+    if (tc) tc.setAttribute('content', mode === 'light' ? '#F5F1EC' : '#1C1A2E')
+    if (sb) sb.setAttribute('content', mode === 'light' ? 'default'  : 'black-translucent')
+  }, [location.pathname, alertLevel, setTheme])
+
+  return null
+}
+
 function AppContent() {
   const location = useLocation()
   return (
     <>
+      <ThemeSyncer />
       <div className="route-enter" key={location.pathname}>
         <Routes>
           <Route path="/"          element={<HomePage />} />
