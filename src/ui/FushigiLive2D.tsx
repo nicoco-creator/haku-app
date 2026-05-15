@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import * as PIXI from 'pixi.js'
-import { Live2DModel } from 'pixi-live2d-display'
+
+// PIXI and pixi-live2d-display are loaded dynamically inside useEffect.
+// Static top-level imports of these packages cause module-init crashes
+// when window.Live2DCubismCore isn't available yet.
 
 const BASE      = import.meta.env.BASE_URL
 const MODEL_URL = `${BASE}live2d/fushigi/Snowbear.haku.model3.json`
@@ -17,7 +19,8 @@ export function FushigiLive2D({ mode, onError }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const modelRef   = useRef<any>(null)
-  const appRef     = useRef<PIXI.Application | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const appRef     = useRef<any>(null)
   const onErrorRef = useRef(onError)
   onErrorRef.current = onError
 
@@ -32,9 +35,15 @@ export function FushigiLive2D({ mode, onError }: Props) {
 
     ;(async () => {
       try {
+        // Dynamic imports — module errors are caught instead of crashing the app
+        const [PIXI, { Live2DModel }] = await Promise.all([
+          import('pixi.js'),
+          import('pixi-live2d-display'),
+        ])
+        if (dead) return
+
         const isMini = mode === 'mini'
         // mini: 140×160 canvas, CSS-cropped to 56×56 circle showing the head
-        // hero: fills the orbRef container
         const w = isMini ? 140 : Math.max(el.clientWidth,  200)
         const h = isMini ? 160 : Math.max(el.clientHeight, 200)
 
@@ -51,7 +60,6 @@ export function FushigiLive2D({ mode, onError }: Props) {
         const view = app.view as HTMLCanvasElement
         view.style.position = 'absolute'
         if (isMini) {
-          // Center horizontally, offset up so the face fills the 56-px clip window
           view.style.left = `${(56 - w) / 2}px`
           view.style.top  = '-20px'
         } else {
@@ -78,7 +86,7 @@ export function FushigiLive2D({ mode, onError }: Props) {
 
         setLoading(false)
 
-        // Idle breathing and body sway via direct parameter writes
+        // Idle breathing / body sway via direct parameter writes
         let t = 0
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const core = (model as any).internalModel?.coreModel
@@ -92,7 +100,7 @@ export function FushigiLive2D({ mode, onError }: Props) {
               core.setParameterValueById('ParamBodyRotateX', Math.sin(t * 0.6)  *  6)
               core.setParameterValueById('ParamBodyRotateZ', Math.sin(t * 0.25) *  3)
               core.setParameterValueById('ParamBreath',      (Math.sin(t * 0.5) + 1) * 0.5)
-            } catch { /* parameter may not exist */ }
+            } catch { /* parameter absent — silent */ }
           })
         }
 
