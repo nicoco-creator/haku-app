@@ -193,7 +193,10 @@
       document.querySelector('button[aria-label="生成を停止"]')              ||
       document.querySelector('button[aria-label="Stop Response"]')           ||
       document.querySelector('button[data-testid="stop-button"]')            ||
-      document.querySelector('[data-is-streaming="true"]')
+      document.querySelector('[data-is-streaming="true"]')                   ||
+      document.querySelector('[data-streaming="true"]')                      ||
+      document.querySelector('button[aria-label*="stop" i][aria-label*="response" i]') ||
+      document.querySelector('button[aria-label*="stop" i][aria-label*="generat" i]')
     )
   }
 
@@ -211,6 +214,10 @@
       '[data-test-render-count]',
       '.prose.break-words',
       '[class*="assistant-message"] .prose',
+      '[data-testid="assistant-message"] .prose',
+      '[data-testid="assistant-message"]',
+      // Broad fallback: any prose block inside a message turn
+      '.prose',
     ]) {
       const els = document.querySelectorAll(sel)
       if (els.length) {
@@ -271,14 +278,33 @@
       sendBtn.click()
       addLog('送信しました — 応答を待機中…')
 
+      // Wait for a new response message to appear (15s; iPhone can be slower)
       await waitUntil(
         () => getMessageCount() > countBefore || isStreamingActive(),
-        10_000, '応答開始 (10秒)'
+        15_000, '応答開始 (15秒)'
       )
-      addLog('応答ストリーミング開始')
+      addLog('応答開始 — 生成完了を待機中…')
 
-      await waitUntil(() => !isStreamingActive(), 60_000, '応答完了 (60秒)')
-      await delay(500)
+      // Wait for generation to finish.
+      // Primary: streaming indicator disappears + text stable for ~0.9s
+      // Fallback: text unchanged for ~2.1s (works even when streaming indicator is undetectable)
+      let prevStableText = ''
+      let stableCount    = 0
+      await waitUntil(() => {
+        const streaming = isStreamingActive()
+        const text      = getLastAssistantMessage()
+        if (!text) { prevStableText = ''; stableCount = 0; return false }
+        if (text === prevStableText) {
+          stableCount++
+          if (!streaming && stableCount >= 3) return true  // ~0.9s stable + no streaming
+          if (stableCount >= 7)               return true  // ~2.1s stable fallback
+        } else {
+          prevStableText = text
+          stableCount    = 0
+        }
+        return false
+      }, 90_000, '応答完了 (90秒)')
+      await delay(300)
 
       const text = getLastAssistantMessage()
       if (!text) throw new Error('応答テキストを取得できませんでした')

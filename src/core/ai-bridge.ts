@@ -26,7 +26,7 @@ export interface AIResponse {
 }
 
 const POLL_INTERVAL_MS = 500
-const TIMEOUT_MS       = 60_000
+const TIMEOUT_MS       = 120_000
 const REQUEST_KEY      = 'ai_request'
 const RESPONSE_KEY     = 'ai_response'
 

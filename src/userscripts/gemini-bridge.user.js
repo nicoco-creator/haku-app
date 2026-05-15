@@ -335,13 +335,30 @@
       // 6. Wait for response to start (new model-response appeared OR stop button visible)
       await waitUntil(
         () => getMessageCount() > countBefore || isStreamingActive(),
-        12_000, '応答開始 (12秒)'
+        15_000, '応答開始 (15秒)'
       )
-      addLog('応答ストリーミング開始')
+      addLog('応答開始 — 生成完了を待機中…')
 
-      // 7. Wait for streaming to end — 60s timeout
-      await waitUntil(() => !isStreamingActive(), 60_000, '応答完了 (60秒)')
-      await delay(600)  // Gemini does a brief post-stream render pass
+      // 7. Wait for generation to finish.
+      // Primary: streaming indicator disappears + text stable for ~0.9s
+      // Fallback: text unchanged for ~2.1s (works even when streaming indicator is undetectable)
+      let prevStableText = ''
+      let stableCount    = 0
+      await waitUntil(() => {
+        const streaming = isStreamingActive()
+        const text      = getLastAssistantMessage()
+        if (!text) { prevStableText = ''; stableCount = 0; return false }
+        if (text === prevStableText) {
+          stableCount++
+          if (!streaming && stableCount >= 3) return true  // ~0.9s stable + no streaming
+          if (stableCount >= 7)               return true  // ~2.1s stable fallback
+        } else {
+          prevStableText = text
+          stableCount    = 0
+        }
+        return false
+      }, 90_000, '応答完了 (90秒)')
+      await delay(300)
 
       // 8. Extract response text
       const text = getLastAssistantMessage()
