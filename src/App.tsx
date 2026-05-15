@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { BackgroundField }  from './ui/BackgroundField'
+import { AIBridgeOverlay } from './ui/AIBridgeOverlay'
 import { syncAlertLevel }   from './core/metrics'
 import { HomePage }         from './modules/home'
 import { StudyPage }        from './modules/study'
@@ -18,21 +19,25 @@ import './ui/transitions.css'
 function AppContent() {
   const location = useLocation()
   return (
-    <div className="route-enter" key={location.pathname}>
-      <Routes>
-        <Route path="/"          element={<HomePage />} />
-        <Route path="/study"     element={<StudyPage />} />
-        <Route path="/emotion"   element={<EmotionPage />} />
-        <Route path="/weather"   element={<WeatherPage />} />
-        <Route path="/journal"   element={<JournalPage />} />
-        <Route path="/companion" element={<CompanionPage />} />
-        <Route path="/goodday"   element={<GooddayPage />} />
-        <Route path="/waiting"   element={<WaitingPage />} />
-        <Route path="/vault"     element={<VaultPage />} />
-        <Route path="/settings"  element={<SettingsPage />} />
-        <Route path="/seen"      element={<SeenPage />} />
-      </Routes>
-    </div>
+    <>
+      <div className="route-enter" key={location.pathname}>
+        <Routes>
+          <Route path="/"          element={<HomePage />} />
+          <Route path="/study"     element={<StudyPage />} />
+          <Route path="/emotion"   element={<EmotionPage />} />
+          <Route path="/weather"   element={<WeatherPage />} />
+          <Route path="/journal"   element={<JournalPage />} />
+          <Route path="/companion" element={<CompanionPage />} />
+          <Route path="/goodday"   element={<GooddayPage />} />
+          <Route path="/waiting"   element={<WaitingPage />} />
+          <Route path="/vault"     element={<VaultPage />} />
+          <Route path="/settings"  element={<SettingsPage />} />
+          <Route path="/seen"      element={<SeenPage />} />
+        </Routes>
+      </div>
+      {/* AI manual-receive overlay — hidden on /vault (isolation policy) */}
+      <AIBridgeOverlay />
+    </>
   )
 }
 

@@ -26,7 +26,7 @@ export interface AIResponse {
 }
 
 const POLL_INTERVAL_MS = 500
-const TIMEOUT_MS       = 120_000
+const TIMEOUT_MS       = 300_000  // 5 min — manual overlay provides recovery before this fires
 const REQUEST_KEY      = 'ai_request'
 const RESPONSE_KEY     = 'ai_response'
 
@@ -91,24 +91,39 @@ export function askAI(
   })
 }
 
-/** 手動でレスポンスを書き込む（AIBridgePanel からも呼ぶ） */
-export function writeManualResponse(requestId: string, text: string): void {
+/** 手動でレスポンスを書き込む（AIBridgeOverlay から呼ぶ） */
+export function writeManualResponse(
+  requestId: string,
+  text:      string,
+  status:    'done' | 'error' = 'done',
+): void {
   const resp: AIResponse = {
     id:        requestId,
     text,
-    status:    'done',
+    status,
     timestamp: Date.now(),
   }
   localStorage.setItem(RESPONSE_KEY, JSON.stringify(resp))
 }
 
-/** 現在のペンディングリクエストを返す（UI表示用） */
+/** 現在のペンディングリクエストを返す（UI表示用）
+ *  ai_response に同じIDの回答が既にある場合は null を返す（処理済みと見なす）
+ */
 export function getPendingRequest(): AIRequest | null {
   const raw = localStorage.getItem(REQUEST_KEY)
   if (!raw) return null
   try {
     const r: AIRequest = JSON.parse(raw)
-    return r.status === 'pending' ? r : null
+    if (r.status !== 'pending') return null
+    // If a matching response is already in storage, the request is effectively done
+    const respRaw = localStorage.getItem(RESPONSE_KEY)
+    if (respRaw) {
+      try {
+        const resp: AIResponse = JSON.parse(respRaw)
+        if (resp.id === r.id) return null
+      } catch { /* ignore */ }
+    }
+    return r
   } catch {
     return null
   }

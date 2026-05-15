@@ -24,6 +24,15 @@
   animation: pageSlideIn 200ms ease-out forwards;
 }
 
+/* ── AI Bridge waiting pulse ── */
+@keyframes haku-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+.haku-pulse {
+  animation: haku-pulse 2s ease-in-out infinite;
+}
+
 /* ── FushigiMini spring-entrance ── */
 @keyframes miniSpring {
   0%   { opacity: 0; transform: scale(0.72); }
