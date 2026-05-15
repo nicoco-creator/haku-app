@@ -1,6 +1,7 @@
 import { db, posts, metrics } from './db'
 import { calcPositiveDensity } from './lexicon'
 import { useAppStore } from './store'
+import { fireAlertNotifIfEnabled } from './notifications'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -204,4 +205,6 @@ export async function syncAlertLevel(): Promise<void> {
   const level = await calculateAlertLevel()
   localStorage.setItem(LAST_CALC_KEY, today)
   store.setAlertLevel(level)
+
+  if (level >= 2) fireAlertNotifIfEnabled()
 }

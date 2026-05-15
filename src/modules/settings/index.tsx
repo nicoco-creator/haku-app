@@ -4,6 +4,7 @@ import { GlassCard } from '../../ui/GlassCard'
 import { colors } from '../../ui/tokens'
 import { useAppStore } from '../../core/store'
 import { syncAlertLevel, getAlertDiagnostics, type AlertDiagnostics } from '../../core/metrics'
+import { NotificationsSection } from './Notifications'
 import {
   db, vaultNotes as vaultHelper,
   type Post, type Study, type Schedule, type Journal,
@@ -715,6 +716,9 @@ export function SettingsPage() {
             </div>
           )}
         </GlassCard>
+
+        {/* ── Notifications section ── */}
+        <NotificationsSection />
 
         {/* ── Backup section ── */}
         <BackupSection />

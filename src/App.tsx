@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { BackgroundField }  from './ui/BackgroundField'
 import { AIBridgePanel }   from './ui/AIBridgePanel'
 import { syncAlertLevel }   from './core/metrics'
+import { notif }            from './core/notifications'
 import { HomePage }         from './modules/home'
 import { StudyPage }        from './modules/study'
 import { EmotionPage }      from './modules/emotion'
@@ -45,6 +46,9 @@ export default function App() {
   useEffect(() => {
     // 起動時に指標を計算して alertLevel を zustand に反映
     syncAlertLevel()
+
+    // 永続化済み通知スケジュールを復元
+    notif.restoreSchedules()
 
     // バックグラウンドから復帰したとき（日付をまたいだ場合も含む）に再計算
     const onVisible = () => {
