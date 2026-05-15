@@ -266,6 +266,24 @@ export function NotificationsSection() {
             iPhone / iPad では、ホーム画面に追加した Haku アプリから設定してください。
             Safari のタブから開いた場合は通知を利用できません。
           </p>
+
+          {/* テスト通知 */}
+          {perm === 'granted' && (
+            <button
+              onClick={() => notif.show('フシギちゃんより', 'フシギちゃんからのテストです')}
+              style={{
+                background: `${colors.accent.blue}18`,
+                border: `1px solid ${colors.accent.blue}55`,
+                borderRadius: 10, padding: '8px 0',
+                color: colors.accent.blue,
+                fontFamily: "'Noto Sans JP',sans-serif", fontSize: 13,
+                cursor: 'pointer', width: '100%',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              テスト通知を送る
+            </button>
+          )}
         </div>
       </GlassCard>
 
