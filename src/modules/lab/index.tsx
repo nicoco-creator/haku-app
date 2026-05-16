@@ -10,8 +10,11 @@ import {
   deleteGadget,
   clearAllGadgets,
   type SavedGadget,
+  type ParseError,
 } from '../../core/gadget-engine'
 import { colors } from '../../ui/tokens'
+
+// ── サンプルコード ─────────────────────────────────────────────────────────────
 
 const SAMPLE = `{
   template: \`
@@ -37,30 +40,251 @@ const SAMPLE = `{
   }
 }`
 
-export function LabPage() {
-  const [code, setCode]               = useState(SAMPLE)
-  const [gadgetName, setGadgetName]   = useState('カードガジェット')
-  const [parseError, setParseError]   = useState<string | null>(null)
-  const [runtimeError, setRuntimeError] = useState<string | null>(null)
-  const [testedCode, setTestedCode]   = useState<string | null>(null)
-  const [previewKey, setPreviewKey]   = useState(0)
-  const [gadgets, setGadgets]         = useState<SavedGadget[]>(() => loadGadgets())
-  const [confirmClear, setConfirmClear] = useState(false)
-  const [installed, setInstalled]     = useState(false)
+// ── AIプロンプト雛形 ──────────────────────────────────────────────────────────
 
-  const hasError  = parseError !== null || runtimeError !== null
+const AI_PROMPT = `以下のフォーマットで、フシギちゃんアプリ用のミニガジェットコードを書いてください。
+
+■ フォーマット（JavaScriptオブジェクトリテラル1つだけ）
+{
+  template: \`<HTMLテンプレート>\`,
+  data() { return { /* 初期データ */ } },
+  methods: { /* イベントハンドラ */ }
+}
+
+■ テンプレートのルール
+・変数の表示 → {{ 変数名 }}
+・クリックイベント → @click="メソッド名"
+・スタイルはすべてインライン style="" で記述（CSSクラス・外部CSSは使えない）
+・フォントは font-family:'Noto Sans JP',sans-serif を推奨
+
+■ データ＆メソッドのルール
+・data() でreturnしたオブジェクトが初期状態
+・メソッド内で this.変数名 = 新しい値 と書くと画面が即座に再描画される
+・メソッドへの引数はクリックイベントオブジェクト(e)のみ
+
+■ 使えないもの（制約）
+・import / require（外部ライブラリ不可）
+・fetch / XMLHttpRequest（ネットワーク通信不可）
+・document.getElementById など、コンテナ外のDOM操作
+・setInterval / setTimeout（動作が不安定になるため非推奨）
+
+■ 推奨カラーパレット
+・背景: rgba(255,255,255,0.07)
+・文字（明）: #F0EEF8　文字（薄）: #A89FC0
+・青: #A8C8E8　ピンク: #E8B4C8　紫: #5B5CE6　琥珀: #C8A050
+
+■ 記述例
+{
+  template: \`
+    <div style="text-align:center;padding:20px;font-family:'Noto Sans JP',sans-serif">
+      <p style="font-size:24px;margin:0 0 12px">{{ message }}</p>
+      <button @click="toggle" style="background:rgba(168,200,232,0.15);border:1px solid rgba(168,200,232,0.35);border-radius:10px;padding:8px 20px;color:#A8C8E8;cursor:pointer">切り替え</button>
+    </div>
+  \`,
+  data() { return { message: '😊 こんにちは', toggled: false } },
+  methods: {
+    toggle() {
+      this.toggled = !this.toggled
+      this.message = this.toggled ? '✨ やあ！' : '😊 こんにちは'
+    }
+  }
+}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【ここに希望のガジェット機能を書いてください】
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+
+// ── エラーパネル ───────────────────────────────────────────────────────────────
+
+function ErrorPanel({ err, label }: { err: ParseError; label: string }) {
+  const [stackOpen, setStackOpen] = useState(false)
+
+  return (
+    <div style={{
+      marginTop: 8, borderRadius: 12, overflow: 'hidden',
+      border: '1px solid rgba(220,80,80,0.4)',
+      background: 'rgba(160,30,30,0.18)',
+    }}>
+      {/* ヘッダー行 */}
+      <div style={{
+        padding: '8px 14px',
+        borderBottom: '1px solid rgba(220,80,80,0.2)',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <span style={{
+          background: 'rgba(220,80,80,0.3)',
+          borderRadius: 6, padding: '1px 7px',
+          fontFamily: 'monospace', fontSize: 10,
+          color: '#ffaaaa', flexShrink: 0,
+        }}>
+          {err.errorType}
+        </span>
+        <span style={{
+          fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11,
+          color: '#ff8888',
+        }}>
+          ⚠️ フシギちゃんより: {label}
+        </span>
+      </div>
+
+      {/* メッセージ */}
+      <div style={{ padding: '10px 14px 6px' }}>
+        <pre style={{
+          margin: 0, fontFamily: 'monospace', fontSize: 12,
+          color: '#ffdddd', whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+          lineHeight: 1.6,
+        }}>
+          {err.message}
+        </pre>
+      </div>
+
+      {/* ヒント */}
+      <div style={{ padding: '0 14px 10px' }}>
+        <p style={{
+          margin: 0, fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11,
+          color: 'rgba(255,210,120,0.9)', lineHeight: 1.7,
+        }}>
+          💡 {err.hint}
+        </p>
+      </div>
+
+      {/* スタックトレース（折りたたみ） */}
+      {err.stack && (
+        <>
+          <button
+            onClick={() => setStackOpen((o) => !o)}
+            style={{
+              width: '100%', padding: '6px 14px', textAlign: 'left',
+              background: 'rgba(0,0,0,0.2)', border: 'none',
+              borderTop: '1px solid rgba(220,80,80,0.15)',
+              color: 'rgba(255,160,160,0.6)', cursor: 'pointer',
+              fontFamily: "'Noto Sans JP',sans-serif", fontSize: 10,
+            }}
+          >
+            {stackOpen ? '▲ スタックトレースを閉じる' : '▼ スタックトレースを見る'}
+          </button>
+          {stackOpen && (
+            <pre style={{
+              margin: 0, padding: '10px 14px',
+              background: 'rgba(0,0,0,0.25)',
+              fontFamily: 'monospace', fontSize: 10,
+              color: 'rgba(255,180,180,0.55)', whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all', maxHeight: 200, overflow: 'auto',
+              lineHeight: 1.6,
+            }}>
+              {err.stack}
+            </pre>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── AIプロンプトカード ─────────────────────────────────────────────────────────
+
+function PromptCard() {
+  const [open, setOpen]     = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(AI_PROMPT)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <GlassCard size="sm" style={{ marginBottom: 20 }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: 0,
+        }}
+      >
+        <span style={{
+          fontFamily: "'Noto Sans JP',sans-serif", fontSize: 13,
+          color: colors.text.primary,
+        }}>
+          🤖 AIにガジェットを書いてもらう（プロンプト雛形）
+        </span>
+        <span style={{ color: colors.text.secondary, fontSize: 12 }}>
+          {open ? '▲' : '▼'}
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 12 }}>
+          <p style={{
+            fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11,
+            color: colors.text.secondary, margin: '0 0 8px', lineHeight: 1.8,
+          }}>
+            下のプロンプトをコピーして、Claude や ChatGPT に貼り付けてください。
+            末尾の【　】の中に作りたい機能を書き加えるだけで OK です。
+          </p>
+
+          <textarea
+            readOnly
+            value={AI_PROMPT}
+            style={{
+              width: '100%', minHeight: 180, boxSizing: 'border-box',
+              background: 'rgba(0,0,0,0.3)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 10, padding: '10px 12px',
+              color: colors.text.secondary,
+              fontFamily: 'monospace', fontSize: 10,
+              lineHeight: 1.65, resize: 'vertical', outline: 'none',
+            }}
+          />
+
+          <button
+            onClick={handleCopy}
+            style={{
+              marginTop: 8, width: '100%', padding: '9px',
+              background: copied ? 'rgba(80,200,120,0.18)' : 'rgba(168,200,232,0.12)',
+              border: `1px solid ${copied ? 'rgba(80,200,120,0.35)' : 'rgba(168,200,232,0.3)'}`,
+              borderRadius: 10,
+              color: copied ? 'rgba(120,220,150,0.9)' : colors.accent.blue,
+              cursor: 'pointer', fontFamily: "'Noto Sans JP',sans-serif", fontSize: 13,
+              transition: 'all 0.25s',
+            }}
+          >
+            {copied ? '✅ コピーしました！' : '📋 プロンプトをコピー'}
+          </button>
+        </div>
+      )}
+    </GlassCard>
+  )
+}
+
+// ── メインページ ───────────────────────────────────────────────────────────────
+
+export function LabPage() {
+  const [code, setCode]             = useState(SAMPLE)
+  const [gadgetName, setGadgetName] = useState('カードガジェット')
+  const [parseErr, setParseErr]     = useState<ParseError | null>(null)
+  const [runtimeErr, setRuntimeErr] = useState<ParseError | null>(null)
+  const [testedCode, setTestedCode] = useState<string | null>(null)
+  const [previewKey, setPreviewKey] = useState(0)
+  const [gadgets, setGadgets]       = useState<SavedGadget[]>(() => loadGadgets())
+  const [confirmClear, setConfirmClear] = useState(false)
+  const [installed, setInstalled]   = useState(false)
+
+  const hasError   = parseErr !== null || runtimeErr !== null
   const canInstall = testedCode !== null && !hasError && gadgetName.trim().length > 0
 
   const handleTest = () => {
     const result = parseGadget(code)
     if (!result.ok) {
-      setParseError(result.error)
-      setRuntimeError(null)
+      const { message, errorType, stack, hint } = result
+      setParseErr({ message, errorType, stack, hint })
+      setRuntimeErr(null)
       setTestedCode(null)
       return
     }
-    setParseError(null)
-    setRuntimeError(null)
+    setParseErr(null)
+    setRuntimeErr(null)
     setTestedCode(code)
     setPreviewKey((k) => k + 1)
     setInstalled(false)
@@ -89,7 +313,7 @@ export function LabPage() {
       <div style={{ maxWidth: 920, margin: '0 auto', paddingBottom: 40 }}>
 
         {/* 注意書き */}
-        <GlassCard size="sm" style={{ marginBottom: 20, textAlign: 'center' }}>
+        <GlassCard size="sm" style={{ marginBottom: 16, textAlign: 'center' }}>
           <p style={{
             fontFamily: "'Noto Serif JP',serif", fontWeight: 300,
             fontSize: 12, color: colors.text.secondary, margin: 0, lineHeight: 1.9,
@@ -97,6 +321,9 @@ export function LabPage() {
             🧪 ここではコードを実験できます。どんなエラーが起きても、アプリ全体は守られています。
           </p>
         </GlassCard>
+
+        {/* AIプロンプトカード */}
+        <PromptCard />
 
         {/* ── エディタ ＋ プレビュー ─────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row gap-4" style={{ marginBottom: 20 }}>
@@ -127,28 +354,11 @@ export function LabPage() {
             />
 
             {/* エラーパネル */}
-            {(parseError || runtimeError) && (
-              <div style={{
-                marginTop: 8, padding: '10px 14px',
-                background: 'rgba(180,40,40,0.2)',
-                border: '1px solid rgba(220,80,80,0.38)',
-                borderRadius: 12,
-              }}>
-                <p style={{
-                  margin: '0 0 6px',
-                  fontFamily: "'Noto Sans JP',sans-serif", fontSize: 12, color: '#ff8888',
-                }}>
-                  ⚠️ フシギちゃんより:{' '}
-                  {parseError ? '構文エラーを発見しました' : '実行中にエラーが起きました'}
-                </p>
-                <pre style={{
-                  margin: 0, fontFamily: 'monospace', fontSize: 11,
-                  color: 'rgba(255,190,190,0.85)', whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all', maxHeight: 140, overflow: 'auto',
-                }}>
-                  {parseError ?? runtimeError}
-                </pre>
-              </div>
+            {parseErr && (
+              <ErrorPanel err={parseErr} label="構文エラーを発見しました" />
+            )}
+            {runtimeErr && (
+              <ErrorPanel err={runtimeErr} label="実行中にエラーが起きました" />
             )}
 
             <button
@@ -187,11 +397,16 @@ export function LabPage() {
                 <GadgetBoundary
                   key={previewKey}
                   gadgetName={gadgetName || 'プレビュー'}
-                  onError={(e) => setRuntimeError(e.message + (e.stack ? '\n' + e.stack : ''))}
+                  onError={(e) => setRuntimeErr({
+                    errorType: e.name || 'Error',
+                    message:   e.message,
+                    stack:     e.stack ?? '',
+                    hint:      '実行中に予期しないエラーが起きました。',
+                  })}
                 >
                   <GadgetMount
                     code={testedCode}
-                    onError={(msg) => setRuntimeError(msg)}
+                    onError={(detail) => setRuntimeErr(detail)}
                   />
                 </GadgetBoundary>
               ) : (

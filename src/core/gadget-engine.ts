@@ -13,11 +13,34 @@ export interface SavedGadget {
   createdAt: string
 }
 
+export interface ParseError {
+  message:   string
+  errorType: string   // SyntaxError / TypeError / etc.
+  stack:     string
+  hint:      string   // pattern-matched human hint
+}
+
 export type ParseResult =
   | { ok: true; options: GadgetOptions }
-  | { ok: false; error: string }
+  | { ok: false } & ParseError
 
 // ── Parser ────────────────────────────────────────────────────────────────────
+
+function hintFor(name: string, msg: string): string {
+  if (/unexpected token/i.test(msg))
+    return 'テンプレート文字列（バッククォート）の閉じ忘れ、カンマの付け忘れ、または対応する括弧の不一致が多いです。'
+  if (/is not defined/i.test(msg))
+    return 'タイポか、data() で定義していない変数名を template や methods で使っています。'
+  if (/is not a function/i.test(msg))
+    return '@click に指定したメソッド名が methods に存在しないか、スペルが違う可能性があります。'
+  if (/cannot read prop/i.test(msg) || /cannot read properties/i.test(msg))
+    return 'undefined / null のプロパティを読もうとしています。data() の初期値を確認してください。'
+  if (/unterminated/i.test(msg))
+    return '文字列またはテンプレートリテラルが閉じられていません。'
+  if (name === 'RangeError')
+    return '無限再帰または配列の範囲外アクセスが起きています。'
+  return 'コードを見直して、もう一度テスト実行してみてください。'
+}
 
 export function parseGadget(code: string): ParseResult {
   try {
@@ -25,14 +48,33 @@ export function parseGadget(code: string): ParseResult {
     const factory = new Function(`return (${code.trim()})`)
     const options = factory() as GadgetOptions
     if (!options || typeof options !== 'object') {
-      return { ok: false, error: 'オブジェクトリテラルを返す必要があります' }
+      return {
+        ok: false,
+        errorType: 'ValidationError',
+        message: 'オブジェクトリテラルを返す必要があります',
+        stack: '',
+        hint: 'コード全体を { ... } で囲んだオブジェクト形式で記述してください。',
+      }
     }
     if (typeof options.template !== 'string' || !options.template.trim()) {
-      return { ok: false, error: 'template プロパティ（文字列）が必要です' }
+      return {
+        ok: false,
+        errorType: 'ValidationError',
+        message: 'template プロパティ（文字列）が必要です',
+        stack: '',
+        hint: 'template: `<div>...</div>` のように template キーを追加してください。',
+      }
     }
     return { ok: true, options }
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    const err = e instanceof Error ? e : new Error(String(e))
+    return {
+      ok: false,
+      errorType: err.name || 'Error',
+      message: err.message,
+      stack: err.stack ?? '',
+      hint: hintFor(err.name, err.message),
+    }
   }
 }
 
