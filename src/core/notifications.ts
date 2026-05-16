@@ -62,7 +62,8 @@ export const NOTIF_IDS = {
 
 // ── In-memory timers ──────────────────────────────────────────────────────────
 
-const _timers = new Map<string, ReturnType<typeof setTimeout>>()
+const _timers    = new Map<string, ReturnType<typeof setTimeout>>()
+const FIRED_PFX  = 'haku_notif_fired_'   // key prefix for last-fired date per schedule
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -103,10 +104,23 @@ async function _show(title: string, body: string, icon?: string): Promise<void> 
 }
 
 function _startTimer(s: Schedule): void {
+  const todayStr = () => new Date().toISOString().slice(0, 10)
+  const firedKey = FIRED_PFX + s.id
+
   const fire = () => {
     if (s.monthEndOnly && !_isLastDayOfMonth()) return
+    const today = todayStr()
+    if (localStorage.getItem(firedKey) === today) return  // already fired today
+    localStorage.setItem(firedKey, today)
     void _show(s.title, s.body)
   }
+
+  // Catch-up: if the scheduled time has already passed today but not yet fired,
+  // show the notification immediately when the app is opened.
+  const now   = new Date()
+  const sched = new Date()
+  sched.setHours(s.hour, s.minute, 0, 0)
+  if (now >= sched) fire()
 
   const t = setTimeout(() => {
     fire()
@@ -177,6 +191,7 @@ export const notif = {
       clearInterval(t)
       _timers.delete(id)
     }
+    localStorage.removeItem(FIRED_PFX + id)
     _saveSchedules(_loadSchedules().filter(s => s.id !== id))
   },
 

@@ -1,21 +1,50 @@
-import { useEffect, useRef, useState } from 'react'
+// PIXI + pixi-live2d-display are loaded dynamically to avoid module-init crashes.
+// Cubism Core SDK is also injected dynamically so we know exactly when it's ready.
 
-// PIXI and pixi-live2d-display are loaded dynamically inside useEffect.
-// Static top-level imports of these packages cause module-init crashes
-// when window.Live2DCubismCore isn't available yet.
+const BASE = import.meta.env.BASE_URL
 
-const BASE      = import.meta.env.BASE_URL
-const MODEL_URL = `${BASE}live2d/fushigi/Snowbear.haku.model3.json`
+export const DEFAULT_MODEL_URL =
+  `${BASE}live2d/fushigi/Snowbear.haku.model3.json`
 
 const IDLE_EXPRS  = ['脸红', '星星眼', '爱心眼', '鼓嘴', '星星眼扩展', '爱心眼扩展1']
 const CLICK_EXPRS = ['脸红', '星星眼', '爱心眼', '泪眼汪汪', '爱心眼扩展2', '鼓嘴']
 
-interface Props {
-  mode:     'hero' | 'mini'
-  onError?: () => void
+// ── Cubism Core SDK loader ────────────────────────────────────────────────────
+// Injects the SDK script tag and waits for it to load. No-ops if already loaded.
+async function ensureCubismCore(timeoutMs = 10_000): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((window as any).Live2DCubismCore) return
+
+  await new Promise<void>((resolve, reject) => {
+    const t = setTimeout(() => {
+      s.remove()
+      reject(new Error('[FushigiLive2D] Cubism Core SDK load timeout'))
+    }, timeoutMs)
+
+    const s = document.createElement('script')
+    s.src = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
+    s.onload  = () => { clearTimeout(t); resolve() }
+    s.onerror = () => {
+      clearTimeout(t)
+      s.remove()
+      reject(new Error('[FushigiLive2D] Cubism Core SDK CDN load failed'))
+    }
+    document.head.appendChild(s)
+  })
 }
 
-export function FushigiLive2D({ mode, onError }: Props) {
+// ── Component ─────────────────────────────────────────────────────────────────
+
+import { useEffect, useRef, useState } from 'react'
+
+interface Props {
+  mode:      'hero' | 'mini'
+  modelUrl?: string        // defaults to DEFAULT_MODEL_URL
+  onError?:  () => void
+}
+
+export function FushigiLive2D({ mode, modelUrl, onError }: Props) {
+  const url          = modelUrl ?? DEFAULT_MODEL_URL
   const containerRef = useRef<HTMLDivElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const modelRef   = useRef<any>(null)
@@ -35,7 +64,11 @@ export function FushigiLive2D({ mode, onError }: Props) {
 
     ;(async () => {
       try {
-        // Dynamic imports — module errors are caught instead of crashing the app
+        // 1. Ensure Cubism Core SDK is available
+        await ensureCubismCore()
+        if (dead) return
+
+        // 2. Load PIXI + pixi-live2d-display (dynamic to avoid static-import crash)
         const [PIXI, { Live2DModel }] = await Promise.all([
           import('pixi.js'),
           import('pixi-live2d-display'),
@@ -49,8 +82,7 @@ export function FushigiLive2D({ mode, onError }: Props) {
 
         const app = new PIXI.Application({
           backgroundAlpha: 0,
-          width:  w,
-          height: h,
+          width: w, height: h,
           resolution:  Math.min(window.devicePixelRatio ?? 1, 1.5),
           autoDensity: true,
         })
@@ -68,7 +100,8 @@ export function FushigiLive2D({ mode, onError }: Props) {
         }
         el.appendChild(view)
 
-        const model = await Live2DModel.from(MODEL_URL)
+        // 3. Load the model
+        const model = await Live2DModel.from(url)
         if (dead) { model.destroy(); app.destroy(true); return }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,7 +119,7 @@ export function FushigiLive2D({ mode, onError }: Props) {
 
         setLoading(false)
 
-        // Idle breathing / body sway via direct parameter writes
+        // 4. Idle breathing / body sway
         let t = 0
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const core = (model as any).internalModel?.coreModel
@@ -100,11 +133,11 @@ export function FushigiLive2D({ mode, onError }: Props) {
               core.setParameterValueById('ParamBodyRotateX', Math.sin(t * 0.6)  *  6)
               core.setParameterValueById('ParamBodyRotateZ', Math.sin(t * 0.25) *  3)
               core.setParameterValueById('ParamBreath',      (Math.sin(t * 0.5) + 1) * 0.5)
-            } catch { /* parameter absent — silent */ }
+            } catch { /* parameter absent */ }
           })
         }
 
-        // Random idle expression every 30 s, clears after 3 s
+        // 5. Random idle expression every 30 s
         exprTimer = setInterval(() => {
           const m = modelRef.current
           if (!m) return
@@ -126,7 +159,7 @@ export function FushigiLive2D({ mode, onError }: Props) {
       appRef.current?.destroy(true)
       appRef.current = null
     }
-  }, [mode])
+  }, [mode, url])
 
   const focus = (clientX: number, clientY: number, rect: DOMRect) => {
     modelRef.current?.focus(

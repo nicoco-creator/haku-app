@@ -21,11 +21,12 @@ import { colors } from './tokens'
 
 export function AIBridgePanel() {
   const location                    = useLocation()
-  const [pending, setPending]       = useState<AIPendingInfo | null>(getPendingAI)
-  const [manualText, setManualText] = useState('')
-  const [showManual, setShowManual] = useState(false)
-  const [flash, setFlash]           = useState<{ msg: string; ok: boolean } | null>(null)
-  const textareaRef                 = useRef<HTMLTextAreaElement>(null)
+  const [pending, setPending]         = useState<AIPendingInfo | null>(getPendingAI)
+  const [manualText, setManualText]   = useState('')
+  const [showManual, setShowManual]   = useState(false)
+  const [showPrompt, setShowPrompt]   = useState(false)
+  const [flash, setFlash]             = useState<{ msg: string; ok: boolean } | null>(null)
+  const textareaRef                   = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     return subscribeAI(() => {
@@ -133,11 +134,53 @@ export function AIBridgePanel() {
             WebkitTapHighlightColor: 'transparent',
           }}
         >
-          【1】{svc} に質問を送る
+          【1】{svc} のタブを開く
         </button>
-        <p style={{ fontSize: 12, color: colors.text.secondary, lineHeight: 1.7, margin: '6px 0 14px', paddingLeft: 2 }}>
-          新しいタブが開きます。質問は自動で入力されているので、送信ボタンを押してください。
+        <p style={{ fontSize: 12, color: colors.text.secondary, lineHeight: 1.7, margin: '6px 0 8px', paddingLeft: 2 }}>
+          質問文はクリップボードにコピー済みです。{svc} の入力欄に貼り付けて送信してください。
         </p>
+
+        {/* プロンプト確認 */}
+        <button
+          onClick={() => setShowPrompt(v => !v)}
+          style={{
+            background: 'transparent', border: 'none',
+            color: colors.text.secondary, cursor: 'pointer',
+            fontSize: 12, fontFamily: 'inherit', padding: '0 0 12px',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+        >
+          {showPrompt ? '▾ 質問文を閉じる' : '▸ 質問文を確認する / コピーし直す'}
+        </button>
+        {showPrompt && (
+          <div style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            borderRadius: 12, padding: '10px 12px', marginBottom: 14,
+          }}>
+            <p style={{
+              fontSize: 11, color: colors.text.secondary, margin: '0 0 8px',
+              fontFamily: 'inherit', lineHeight: 1.7, maxHeight: 120, overflowY: 'auto',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+            }}>
+              {pending.prompt.slice(0, 600)}{pending.prompt.length > 600 ? '…' : ''}
+            </p>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(pending!.prompt).catch(() => {})
+                showFlash('コピーしました ✓', true)
+              }}
+              style={{
+                background: `${svcCl}18`, border: `1px solid ${svcCl}44`,
+                borderRadius: 8, padding: '5px 12px',
+                color: svcCl, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                WebkitTapHighlightColor: 'transparent',
+              }}
+            >
+              コピーし直す
+            </button>
+          </div>
+        )}
 
         {/* ── 手順ガイド ── */}
         <div style={{

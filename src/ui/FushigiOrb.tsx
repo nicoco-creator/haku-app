@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { glassCard, colors, type Mood } from './tokens'
 import { useAppStore } from '../core/store'
-import { FushigiLive2D } from './FushigiLive2D'
+import { FushigiLive2D, DEFAULT_MODEL_URL } from './FushigiLive2D'
 
 const BASE       = import.meta.env.BASE_URL
 const USE_LIVE2D = import.meta.env.VITE_USE_LIVE2D === 'true'
@@ -53,18 +53,23 @@ const moodFilter: Record<Mood, CSSProperties> = {
 const SMILE_FILTER = 'brightness(1.08) saturate(1.15) hue-rotate(-5deg)'
 
 export function FushigiOrb({ mode, mood = 'default', message }: Props) {
-  const navigate       = useNavigate()
-  const alertLevel     = useAppStore((s) => s.alertLevel)
-  const theme          = useAppStore((s) => s.theme)
-  const isDark         = theme === 'dark'
-  const canvasRef      = useRef<HTMLCanvasElement>(null)
-  const orbRef         = useRef<HTMLDivElement>(null)
-  const imgRef         = useRef<HTMLImageElement>(null)
-  const particles      = useRef<Particle[]>([])
-  const animRef        = useRef<number>(0)
-  const smiling        = useRef(false)
+  const navigate           = useNavigate()
+  const alertLevel         = useAppStore((s) => s.alertLevel)
+  const theme              = useAppStore((s) => s.theme)
+  const live2dModelUrl     = useAppStore((s) => s.live2dModelUrl)
+  const isDark             = theme === 'dark'
+  const modelUrl           = live2dModelUrl ?? DEFAULT_MODEL_URL
+  const canvasRef          = useRef<HTMLCanvasElement>(null)
+  const orbRef             = useRef<HTMLDivElement>(null)
+  const imgRef             = useRef<HTMLImageElement>(null)
+  const particles          = useRef<Particle[]>([])
+  const animRef            = useRef<number>(0)
+  const smiling            = useRef(false)
   const [live2dError, setLive2dError] = useState(false)
   const useLive2D = USE_LIVE2D && !live2dError
+
+  // Reset error when model URL changes (allows retry with new model)
+  useEffect(() => { setLive2dError(false) }, [modelUrl])
 
   useEffect(() => {
     if (mode !== 'hero') return
@@ -164,7 +169,7 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
         }}
       >
         {useLive2D
-          ? <FushigiLive2D mode="mini" onError={() => setLive2dError(true)} />
+          ? <FushigiLive2D key={modelUrl} mode="mini" modelUrl={modelUrl} onError={() => setLive2dError(true)} />
           : <img
               src={`${BASE}fushigi-placeholder.png`}
               alt="" width={50} height={50}
@@ -196,7 +201,7 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
         }}
       >
         {useLive2D
-          ? <FushigiLive2D mode="hero" onError={() => setLive2dError(true)} />
+          ? <FushigiLive2D key={modelUrl} mode="hero" modelUrl={modelUrl} onError={() => setLive2dError(true)} />
           : <img
               ref={imgRef}
               src={`${BASE}fushigi-placeholder.png`}

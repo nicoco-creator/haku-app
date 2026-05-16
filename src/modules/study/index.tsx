@@ -621,7 +621,7 @@ function TutorTab() {
     if (hintTexts[level - 1]) { setHintLevel(level); return }
     setLoadingHint(true)
     try {
-      const text = await askAI(buildHintPrompt(current.content, level))
+      const text = await askAI(buildHintPrompt(current.content, level), { skipProtocol: true })
       setHintTexts((prev) => {
         const next: [string, string, string] = [...prev]
         next[level - 1] = text

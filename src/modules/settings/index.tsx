@@ -5,6 +5,7 @@ import { colors } from '../../ui/tokens'
 import { useAppStore } from '../../core/store'
 import { syncAlertLevel, getAlertDiagnostics, type AlertDiagnostics } from '../../core/metrics'
 import { NotificationsSection } from './Notifications'
+import { Live2DSection } from './Live2DSection'
 import {
   db, vaultNotes as vaultHelper,
   type Post, type Study, type Schedule, type Journal,
@@ -719,6 +720,9 @@ export function SettingsPage() {
 
         {/* ── Notifications section ── */}
         <NotificationsSection />
+
+        {/* ── Live2D section ── */}
+        <Live2DSection />
 
         {/* ── Backup section ── */}
         <BackupSection />
