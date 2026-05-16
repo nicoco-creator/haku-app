@@ -63,7 +63,7 @@ export function getAccent(name: AccentName): string {
 }
 
 export const glassCard: CSSProperties = {
-  background: 'rgba(255,255,255,0.07)',
+  background: 'var(--haku-frost, rgba(255,255,255,0.07))',
   backdropFilter: 'blur(20px) saturate(120%)',
   WebkitBackdropFilter: 'blur(20px) saturate(120%)',
   border: '1px solid rgba(255,255,255,0.14)',

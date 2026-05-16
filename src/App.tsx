@@ -24,7 +24,9 @@ import { TimerPage }        from './modules/timer'
 import { CollectionPage }   from './modules/collection'
 import { AuctionPage }      from './modules/auction'
 import { NewsPage }         from './modules/news'
-import { LabPage }          from './modules/lab'
+import { BGMPage }          from './modules/bgm'
+import { ThemePage }        from './modules/theme'
+import { BGMPlayer }        from './ui/BGMPlayer'
 import { BlockModeOverlay } from './ui/BlockModeOverlay'
 import { GiftRevealPopup }  from './ui/GiftRevealPopup'
 import { getReservedGift }  from './core/shop'
@@ -32,29 +34,40 @@ import './ui/transitions.css'
 
 // ── テーマ・CSS変数・メタタグを一括管理 ────────────────────────────────────────
 function ThemeSyncer() {
-  const location   = useLocation()
-  const alertLevel = useAppStore((s) => s.alertLevel)
-  const setTheme   = useAppStore((s) => s.setTheme)
+  const location         = useLocation()
+  const alertLevel       = useAppStore((s) => s.alertLevel)
+  const setTheme         = useAppStore((s) => s.setTheme)
+  const uiThemeAlwaysDark = useAppStore((s) => s.uiThemeAlwaysDark)
 
   useEffect(() => {
-    const path    = location.pathname
-    const isDark  = path === '/study' || path.startsWith('/study/')
-                  || path === '/vault' || path.startsWith('/vault/')
-    const mode    = isDark || alertLevel >= 2 ? 'dark' : 'light'
+    const root = document.documentElement
+
+    // 模様替えでダークテーマが選ばれている場合は常に dark モード
+    if (uiThemeAlwaysDark) {
+      setTheme('dark')
+      root.style.setProperty('--haku-text-primary',   '#F0EEF8')
+      root.style.setProperty('--haku-text-secondary', '#A89FC0')
+      const tc = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      const sb = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]')
+      if (tc) tc.setAttribute('content', '#1C1A2E')
+      if (sb) sb.setAttribute('content', 'black-translucent')
+      return
+    }
+
+    const path   = location.pathname
+    const isDark = path === '/study' || path.startsWith('/study/')
+                 || path === '/vault' || path.startsWith('/vault/')
+    const mode   = isDark || alertLevel >= 2 ? 'dark' : 'light'
 
     setTheme(mode)
-
-    // テキスト色の CSS 変数を更新（全コンポーネントが自動追従）
-    const root = document.documentElement
     root.style.setProperty('--haku-text-primary',   mode === 'light' ? '#2D2A3E' : '#F0EEF8')
     root.style.setProperty('--haku-text-secondary', mode === 'light' ? '#7A7290' : '#A89FC0')
 
-    // PWA ステータスバー・theme-color
     const tc = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
     const sb = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-status-bar-style"]')
     if (tc) tc.setAttribute('content', mode === 'light' ? '#F5F1EC' : '#1C1A2E')
     if (sb) sb.setAttribute('content', mode === 'light' ? 'default'  : 'black-translucent')
-  }, [location.pathname, alertLevel, setTheme])
+  }, [location.pathname, alertLevel, setTheme, uiThemeAlwaysDark])
 
   return null
 }
@@ -83,7 +96,8 @@ function AppContent() {
           <Route path="/collection" element={<CollectionPage />} />
           <Route path="/auction"    element={<AuctionPage />} />
           <Route path="/news"       element={<NewsPage />} />
-          <Route path="/lab"        element={<LabPage />} />
+          <Route path="/bgm"        element={<BGMPage />} />
+          <Route path="/theme"      element={<ThemePage />} />
         </Routes>
       </div>
       {/* AI magic-button panel — hidden on /vault and /companion (isolation policy) */}
@@ -92,6 +106,7 @@ function AppContent() {
       <BlockModeOverlay />
       {/* お守りラッピング — 前回セッションで書いたメッセージがあれば表示 */}
       {gift && <GiftRevealPopup message={gift.message} writtenAt={gift.writtenAt} onClose={() => setGift(null)} />}
+      <BGMPlayer />
     </>
   )
 }

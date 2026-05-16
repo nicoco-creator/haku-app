@@ -45,7 +45,7 @@ export function GlassCard({
   const alphaHex    = isDark ? '80' : '99'   // 0.50 dark / 0.60 light
   const borderColor = accent
     ? `${getAccent(accent)}${alphaHex}`
-    : isDark ? 'rgba(255,255,255,0.14)' : 'rgba(45,42,62,0.18)'
+    : isDark ? 'var(--haku-frost-border, rgba(255,255,255,0.14))' : 'rgba(45,42,62,0.18)'
 
   return (
     <div

@@ -107,6 +107,13 @@ export interface NewsReport {
   createdAt: string      // ISO timestamp
 }
 
+export interface BGMTrack {
+  id?:       number
+  name:      string
+  audioBlob: Blob
+  createdAt: string
+}
+
 // ── Database class ────────────────────────────────────────────────────────────
 
 class HakuDatabase extends Dexie {
@@ -121,6 +128,7 @@ class HakuDatabase extends Dexie {
   metrics!:     EntityTable<Metric,     'id'>
   seenStats!:   EntityTable<SeenStat,   'id'>
   newsReports!: EntityTable<NewsReport, 'id'>
+  bgmTracks!:   EntityTable<BGMTrack,   'id'>
 
   constructor() {
     super('HakuDB')
@@ -144,6 +152,10 @@ class HakuDatabase extends Dexie {
     // v3: daily news reports
     this.version(3).stores({
       newsReports: '++id, date, category, createdAt',
+    })
+    // v4: BGM imported tracks
+    this.version(4).stores({
+      bgmTracks: '++id, name, createdAt',
     })
   }
 }
@@ -195,3 +207,4 @@ export const chatLogs    = makeHelpers(db.chatLogs)
 export const metrics     = makeHelpers(db.metrics)
 export const seenStats   = makeHelpers(db.seenStats)
 export const newsReports = makeHelpers(db.newsReports)
+export const bgmTracks   = makeHelpers(db.bgmTracks)
