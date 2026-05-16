@@ -22,6 +22,8 @@ import { SettingsPage }     from './modules/settings'
 import { SeenPage }         from './modules/seen'
 import { TimerPage }        from './modules/timer'
 import { CollectionPage }   from './modules/collection'
+import { AuctionPage }      from './modules/auction'
+import { BlockModeOverlay } from './ui/BlockModeOverlay'
 import './ui/transitions.css'
 
 // ── テーマ・CSS変数・メタタグを一括管理 ────────────────────────────────────────
@@ -73,10 +75,13 @@ function AppContent() {
           <Route path="/seen"       element={<SeenPage />} />
           <Route path="/timer"      element={<TimerPage />} />
           <Route path="/collection" element={<CollectionPage />} />
+          <Route path="/auction"    element={<AuctionPage />} />
         </Routes>
       </div>
       {/* AI magic-button panel — hidden on /vault and /companion (isolation policy) */}
       <AIBridgePanel />
+      {/* 5分間遮断モードオーバーレイ（ショップ購入時に起動） */}
+      <BlockModeOverlay />
     </>
   )
 }

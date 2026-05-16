@@ -5,6 +5,7 @@ import { colors } from '../../ui/tokens'
 import { checkTimerBadges, BADGE_DEFS } from '../../core/badges'
 import { recordTimerComplete } from '../../core/meta'
 import { tryGetSouvenir, type SouvenirDef } from '../../core/souvenirs'
+import { hasItem } from '../../core/shop'
 
 const KEY_COUNT = 'haku_timer_count'
 
@@ -218,6 +219,18 @@ export function TimerPage() {
                 </div>
               )}
             </GlassCard>
+
+            {/* frequency_note ショップアイテム購入済みの場合に表示 */}
+            {hasItem('frequency_note') && (
+              <div style={{ textAlign: 'center', padding: '6px 0' }}>
+                <p style={{ margin: 0, fontFamily: 'Inter,sans-serif', fontWeight: 300, fontSize: 12, color: colors.accent.blue, letterSpacing: '0.04em' }}>
+                  ♪ 432Hz — 精神を凪に導く周波数
+                </p>
+                <p style={{ margin: '3px 0 0', fontFamily: "'Noto Serif JP',serif", fontWeight: 300, fontSize: 11, color: colors.text.secondary, lineHeight: 1.6 }}>
+                  この集中が終わったとき、世界が少し違って見えるかもしれません。
+                </p>
+              </div>
+            )}
 
             <button
               onClick={handleStart}

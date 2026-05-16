@@ -1,6 +1,7 @@
 /**
  * フシギちゃんの気まぐれ交換日記 — おみやげシステム
  * タイマー完了・ミッション達成時に一定確率でアイテムを贈る。
+ * shop_drawing のみショップ限定（tryGetSouvenir の抽選から除外）。
  */
 
 const KEY = 'haku_souvenirs'
@@ -15,6 +16,7 @@ export interface SouvenirDef {
   emoji: string
   name: string
   fushigiSays: string
+  shopOnly?: boolean  // true = 抽選から除外、ショップのみ入手可
 }
 
 export interface EarnedSouvenir {
@@ -71,6 +73,14 @@ export const SOUVENIR_DEFS: readonly SouvenirDef[] = [
     name: '錆びた小さな鍵',
     fushigiSays: '使い道はわかりません。でも捨てたくなかったんです。あなたが持っていてください。',
   },
+  // ── ショップ限定 ──────────────────────────────────────────────────────────
+  {
+    id: 'shop_drawing',
+    emoji: '✏️',
+    name: 'ノートの端のドローイング',
+    fushigiSays: 'ノートの端によく書くんです、こういうの。意味はありません。でも、ないことに意味があります。',
+    shopOnly: true,
+  },
 ]
 
 // ── localStorage 管理 ─────────────────────────────────────────────────────────
@@ -93,29 +103,35 @@ export function isSouvenirEarned(id: string): boolean {
 }
 
 function earnSouvenir(id: string): EarnedSouvenir {
+  if (isSouvenirEarned(id)) return load().find((s) => s.id === id)!
   const entry: EarnedSouvenir = { id, earnedAt: new Date().toISOString() }
   save([...load(), entry])
   return entry
+}
+
+/** ショップ購入など、外部から直接付与する場合に使う */
+export function grantSouvenir(id: string): EarnedSouvenir {
+  return earnSouvenir(id)
 }
 
 // ── ガチャロジック ─────────────────────────────────────────────────────────────
 
 /**
  * 指定確率でおみやげを1つ取得する。
+ * shopOnly アイテムは抽選から除外。
  * まだ持っていないものを優先し、全部持っていたらランダムで重複選出。
- * 確率を外れた場合は null を返す。
  */
 export function tryGetSouvenir(): SouvenirDef | null {
   if (Math.random() >= SOUVENIR_CHANCE) return null
 
-  const earned = load()
+  const earned    = load()
   const earnedIds = new Set(earned.map((e) => e.id))
+  const pool      = SOUVENIR_DEFS.filter((d) => !d.shopOnly)
 
-  // 未獲得のものを優先
-  const unowned = SOUVENIR_DEFS.filter((d) => !earnedIds.has(d.id))
-  const pool    = unowned.length > 0 ? unowned : [...SOUVENIR_DEFS]
+  const unowned = pool.filter((d) => !earnedIds.has(d.id))
+  const pick    = unowned.length > 0 ? unowned : pool
 
-  const def = pool[Math.floor(Math.random() * pool.length)]
+  const def = pick[Math.floor(Math.random() * pick.length)]
   earnSouvenir(def.id)
   return def
 }
