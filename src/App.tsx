@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { BackgroundField }  from './ui/BackgroundField'
 import { AIBridgePanel }   from './ui/AIBridgePanel'
@@ -24,6 +24,8 @@ import { TimerPage }        from './modules/timer'
 import { CollectionPage }   from './modules/collection'
 import { AuctionPage }      from './modules/auction'
 import { BlockModeOverlay } from './ui/BlockModeOverlay'
+import { GiftRevealPopup }  from './ui/GiftRevealPopup'
+import { getReservedGift }  from './core/shop'
 import './ui/transitions.css'
 
 // ── テーマ・CSS変数・メタタグを一括管理 ────────────────────────────────────────
@@ -57,6 +59,8 @@ function ThemeSyncer() {
 
 function AppContent() {
   const location = useLocation()
+  const [gift, setGift] = useState(() => getReservedGift())
+
   return (
     <>
       <ThemeSyncer />
@@ -82,6 +86,8 @@ function AppContent() {
       <AIBridgePanel />
       {/* 5分間遮断モードオーバーレイ（ショップ購入時に起動） */}
       <BlockModeOverlay />
+      {/* お守りラッピング — 前回セッションで書いたメッセージがあれば表示 */}
+      {gift && <GiftRevealPopup message={gift.message} writtenAt={gift.writtenAt} onClose={() => setGift(null)} />}
     </>
   )
 }

@@ -81,6 +81,13 @@ export const SOUVENIR_DEFS: readonly SouvenirDef[] = [
     fushigiSays: 'ノートの端によく書くんです、こういうの。意味はありません。でも、ないことに意味があります。',
     shopOnly: true,
   },
+  {
+    id: 'clay_star',
+    emoji: '⭐',
+    name: '粘土から生まれた星',
+    fushigiSays: '重かったものが、こんな形になりました。かわいくないですか？',
+    shopOnly: true,
+  },
 ]
 
 // ── localStorage 管理 ─────────────────────────────────────────────────────────
