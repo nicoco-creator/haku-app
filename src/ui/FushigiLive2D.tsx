@@ -68,10 +68,13 @@ export function FushigiLive2D({ mode, modelUrl, onError }: Props) {
         await ensureCubismCore()
         if (dead) return
 
-        // 2. Load PIXI + pixi-live2d-display (dynamic to avoid static-import crash)
+        // 2. Load PIXI + pixi-live2d-display + cubism4 adaptor
+        // cubism4 is a side-effect import that registers Cubism 4 model support
+        // in pixi-live2d-display; without it, .moc3 models silently fail to load.
         const [PIXI, { Live2DModel }] = await Promise.all([
           import('pixi.js'),
           import('pixi-live2d-display'),
+          import('pixi-live2d-display/cubism4'),
         ])
         if (dead) return
 
