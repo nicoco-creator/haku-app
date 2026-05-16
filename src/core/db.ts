@@ -95,19 +95,30 @@ export interface SeenStat {
   idleCompanionTime: number
 }
 
+export interface NewsReport {
+  id?: number
+  date: string           // YYYY-MM-DD
+  category: string       // category id
+  categoryLabel: string
+  categoryEmoji: string
+  content: string        // AI response text
+  createdAt: string      // ISO timestamp
+}
+
 // ── Database class ────────────────────────────────────────────────────────────
 
 class HakuDatabase extends Dexie {
-  posts!:     EntityTable<Post,     'id'>
-  studies!:   EntityTable<Study,    'id'>
-  schedules!: EntityTable<Schedule, 'id'>
-  journals!:  EntityTable<Journal,  'id'>
-  goodDays!:  EntityTable<GoodDay,  'id'>
-  waitings!:  EntityTable<Waiting,  'id'>
-  vaultNotes!:EntityTable<VaultNote,'id'>
-  chatLogs!:  EntityTable<ChatLog,  'id'>
-  metrics!:   EntityTable<Metric,   'id'>
-  seenStats!: EntityTable<SeenStat, 'id'>
+  posts!:       EntityTable<Post,       'id'>
+  studies!:     EntityTable<Study,      'id'>
+  schedules!:   EntityTable<Schedule,   'id'>
+  journals!:    EntityTable<Journal,    'id'>
+  goodDays!:    EntityTable<GoodDay,    'id'>
+  waitings!:    EntityTable<Waiting,    'id'>
+  vaultNotes!:  EntityTable<VaultNote,  'id'>
+  chatLogs!:    EntityTable<ChatLog,    'id'>
+  metrics!:     EntityTable<Metric,     'id'>
+  seenStats!:   EntityTable<SeenStat,   'id'>
+  newsReports!: EntityTable<NewsReport, 'id'>
 
   constructor() {
     super('HakuDB')
@@ -127,6 +138,10 @@ class HakuDatabase extends Dexie {
     this.version(2).stores({
       studies:   '++id, subject, status, mediaType, createdAt',
       schedules: '++id, examDate, subject, createdAt',
+    })
+    // v3: daily news reports
+    this.version(3).stores({
+      newsReports: '++id, date, category, createdAt',
     })
   }
 }
@@ -167,13 +182,14 @@ function makeHelpers<T extends { id?: number }>(rawTable: EntityTable<T, 'id'>) 
 
 // ── Per-table helpers (re-exported for convenience) ───────────────────────────
 
-export const posts      = makeHelpers(db.posts)
-export const studies    = makeHelpers(db.studies)
-export const schedules  = makeHelpers(db.schedules)
-export const journals   = makeHelpers(db.journals)
-export const goodDays   = makeHelpers(db.goodDays)
-export const waitings   = makeHelpers(db.waitings)
-export const vaultNotes = makeHelpers(db.vaultNotes)
-export const chatLogs   = makeHelpers(db.chatLogs)
-export const metrics    = makeHelpers(db.metrics)
-export const seenStats  = makeHelpers(db.seenStats)
+export const posts       = makeHelpers(db.posts)
+export const studies     = makeHelpers(db.studies)
+export const schedules   = makeHelpers(db.schedules)
+export const journals    = makeHelpers(db.journals)
+export const goodDays    = makeHelpers(db.goodDays)
+export const waitings    = makeHelpers(db.waitings)
+export const vaultNotes  = makeHelpers(db.vaultNotes)
+export const chatLogs    = makeHelpers(db.chatLogs)
+export const metrics     = makeHelpers(db.metrics)
+export const seenStats   = makeHelpers(db.seenStats)
+export const newsReports = makeHelpers(db.newsReports)

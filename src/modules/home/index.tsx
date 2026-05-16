@@ -33,6 +33,7 @@ const modules: Module[] = [
   { label: '作業タイマー',   emoji: '⏱️', accent: 'blue',   to: '/timer' },
   { label: '心の足跡',       emoji: '🌑', accent: 'silver', to: '/collection' },
   { label: '不安の買い取り', emoji: '🏷️', accent: 'silver', to: '/auction' },
+  { label: '今日のニュース', emoji: '📰', accent: 'blue',   to: '/news'    },
 ]
 
 function isLastDayOfMonth(): boolean {

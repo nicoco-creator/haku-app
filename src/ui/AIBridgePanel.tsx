@@ -42,6 +42,7 @@ export function AIBridgePanel() {
 
   if (location.pathname.includes('/vault'))     return null
   if (location.pathname.includes('/companion')) return null
+  if (location.pathname.includes('/news'))      return null
   if (!pending) return null
 
   const svc   = pending.service === 'gemini' ? 'Gemini' : 'Claude'
