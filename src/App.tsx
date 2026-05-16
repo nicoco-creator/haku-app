@@ -7,6 +7,8 @@ import { notif }            from './core/notifications'
 import { useAppStore }      from './core/store'
 import { initSession, generateLetter } from './core/absence'
 import { setBadge }         from './core/app-badge'
+import { recordSession }    from './core/meta'
+import { checkStartupBadges } from './core/badges'
 import { HomePage }         from './modules/home'
 import { StudyPage }        from './modules/study'
 import { EmotionPage }      from './modules/emotion'
@@ -86,6 +88,10 @@ export default function App() {
 
     // 永続化済み通知スケジュールを復元
     notif.restoreSchedules()
+
+    // メタデータ更新 → スタートアップバッジチェック
+    const isFirst = recordSession()
+    checkStartupBadges(isFirst)
 
     // 不在時間を計算し手紙を生成、last_active_time を更新
     const absenceMinutes = initSession()

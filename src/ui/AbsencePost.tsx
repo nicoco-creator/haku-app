@@ -12,6 +12,8 @@ import {
   formatAbsence,
   type AbsenceLetter,
 } from '../core/absence'
+import { recordLetterRead } from '../core/meta'
+import { checkLetterBadges } from '../core/badges'
 import { colors } from './tokens'
 
 // ── Date formatter ────────────────────────────────────────────────────────────
@@ -192,6 +194,8 @@ export function AbsencePostIcon() {
 
   const handleRead = (id: string) => {
     markLetterRead(id)
+    recordLetterRead()
+    checkLetterBadges()  // earn absent_letter_10 if threshold reached
     reload()
   }
 
