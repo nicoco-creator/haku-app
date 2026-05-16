@@ -5,6 +5,8 @@ import { AIBridgePanel }   from './ui/AIBridgePanel'
 import { syncAlertLevel }   from './core/metrics'
 import { notif }            from './core/notifications'
 import { useAppStore }      from './core/store'
+import { initSession, generateLetter } from './core/absence'
+import { setBadge }         from './core/app-badge'
 import { HomePage }         from './modules/home'
 import { StudyPage }        from './modules/study'
 import { EmotionPage }      from './modules/emotion'
@@ -80,6 +82,13 @@ export default function App() {
 
     // 永続化済み通知スケジュールを復元
     notif.restoreSchedules()
+
+    // 不在時間を計算し手紙を生成、last_active_time を更新
+    const absenceMinutes = initSession()
+    if (absenceMinutes >= 5) generateLetter(absenceMinutes)
+
+    // App Badge API — 在室ランプとして「1」をセット（ホーム表示時にクリア）
+    setBadge(1)
 
     // バックグラウンドから復帰したとき（日付をまたいだ場合も含む）に再計算
     const onVisible = () => {

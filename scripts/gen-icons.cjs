@@ -1,8 +1,9 @@
 /**
- * Generates pastel PNG icons for haku-app.
+ * Generates PNG icons for haku-app.
  * Uses only Node.js built-in modules (zlib) — no npm dependencies.
  *
- * Design: pastel lavender→blush gradient rounded-square + indigo snowflake.
+ * Design: cream→white gradient rounded-square + light-blue snowflake + white center dot.
+ * Colors: cream #FFF8EC · white #FFFFFF · light blue #A8C8E8
  * Run: node scripts/gen-icons.cjs
  */
 
@@ -100,32 +101,34 @@ function drawIcon(nx, ny) {
     alpha = Math.max(0, Math.min(255, alpha))
   }
 
-  // ── Background gradient: lavender (top-left) → blush (bottom-right) ──
-  // #EDE4FF → #FFE4EE
-  const t  = (nx + ny) * 0.5        // 0 at top-left, 1 at bottom-right
-  const bgR = Math.round(237 + (255 - 237) * t)   // 237 → 255
-  const bgG = Math.round(228 + (228 - 228) * t)   // 228 (same)
-  const bgB = Math.round(255 + (238 - 255) * t)   // 255 → 238
+  // ── Background: cream (#FFF8EC) at top → white (#FFFFFF) at bottom ──
+  //    with a faint light-blue tint at the very bottom edge
+  const gradT  = ny                                      // 0=top, 1=bottom
+  const bgR    = Math.round(255 + (255 - 255) * gradT)  // 255 (constant)
+  const bgG    = Math.round(248 + (255 - 248) * gradT)  // 248 → 255
+  const bgB    = Math.round(236 + (255 - 236) * gradT)  // 236 → 255
 
-  // ── 6-arm snowflake in indigo #5B5CE6 ──
+  // ── 6-arm snowflake — light blue #A8C8E8 arms, white center dot ──
   const r = Math.sqrt(fx * fx + fy * fy)
 
   const outerR  = 0.30   // arm tip
-  const innerR  = 0.055  // center dot radius
-  const armHW   = 0.038  // arm half-width
+  const innerR  = 0.060  // center dot radius
+  const armHW   = 0.042  // arm half-width (thicker for small sizes)
   const crossR1 = 0.135  // 1st cross position along arm
-  const crossR2 = 0.220  // 2nd cross position along arm
-  const crossHW = 0.030  // cross line half-width
-  const crossHL = 0.068  // cross line half-length
+  const crossR2 = 0.225  // 2nd cross position along arm
+  const crossHW = 0.033  // cross line half-width
+  const crossHL = 0.072  // cross line half-length
 
-  let isSnow = r < innerR  // center dot
+  // Center white dot
+  if (r < innerR) return [255, 255, 255, alpha]
+
+  let isSnow = false
 
   for (let i = 0; i < 6 && !isSnow; i++) {
     const θ   = (i * Math.PI) / 3
     const cos = Math.cos(θ)
     const sin = Math.sin(θ)
 
-    // Project (fx,fy) onto arm axis
     const along = fx * cos + fy * sin
     const perp  = Math.abs(-fx * sin + fy * cos)
 
@@ -134,7 +137,7 @@ function drawIcon(nx, ny) {
       isSnow = true; break
     }
 
-    // Cross pieces (on both ± sides of arm)
+    // Cross pieces on both ± sides of arm
     for (const cp of [crossR1, crossR2]) {
       if ((Math.abs(along - cp) < crossHW || Math.abs(along + cp) < crossHW) && perp < crossHL) {
         isSnow = true; break
@@ -142,7 +145,8 @@ function drawIcon(nx, ny) {
     }
   }
 
-  if (isSnow) return [91, 92, 230, alpha]    // indigo #5B5CE6
+  // Light blue #A8C8E8 = RGB(168, 200, 232)
+  if (isSnow) return [168, 200, 232, alpha]
   return [bgR, bgG, bgB, alpha]
 }
 

@@ -5,7 +5,7 @@ import { colors } from '../../ui/tokens'
 import { useAppStore } from '../../core/store'
 import { syncAlertLevel, getAlertDiagnostics, type AlertDiagnostics } from '../../core/metrics'
 import { NotificationsSection } from './Notifications'
-import { Live2DSection } from './Live2DSection'
+import { ICSSection } from './ICSSection'
 import {
   db, vaultNotes as vaultHelper,
   type Post, type Study, type Schedule, type Journal,
@@ -538,6 +538,42 @@ function BackupSection() {
   )
 }
 
+// ── AppBadgeInfo ──────────────────────────────────────────────────────────────
+
+function AppBadgeInfo() {
+  const supported = typeof navigator !== 'undefined' && 'setAppBadge' in navigator
+  const BLUE = colors.accent.blue
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+        <span style={{ fontSize: 11, color: colors.text.secondary, fontFamily: "'Noto Sans JP',sans-serif", letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
+          在室ランプ（App Badge）
+        </span>
+        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+      </div>
+      <GlassCard size="sm">
+        <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 14, color: colors.text.primary, margin: '0 0 6px' }}>
+          アイコンバッジ
+          <span style={{ marginLeft: 8, fontSize: 11, color: supported ? BLUE : colors.accent.amber }}>
+            {supported ? '● 対応' : '○ 非対応'}
+          </span>
+        </p>
+        <p style={{ fontFamily: "'Noto Sans JP',sans-serif", fontSize: 12, color: colors.text.secondary, margin: 0, lineHeight: 1.8 }}>
+          アプリを起動するとホーム画面のアイコンに「1」のバッジが点灯します。
+          これは<span style={{ color: BLUE }}>「フシギちゃんが今あなたのことを想っているサイン」</span>です。
+          ホーム（部屋）画面を開くとバッジが消えます。
+          {!supported && (
+            <span style={{ display: 'block', marginTop: 4, color: colors.accent.amber }}>
+              ※ このブラウザはApp Badge APIに対応していません。
+            </span>
+          )}
+        </p>
+      </GlassCard>
+    </>
+  )
+}
+
 // ── page ──────────────────────────────────────────────────────────────────────
 
 export function SettingsPage() {
@@ -721,8 +757,11 @@ export function SettingsPage() {
         {/* ── Notifications section ── */}
         <NotificationsSection />
 
-        {/* ── Live2D section ── */}
-        <Live2DSection />
+        {/* ── ICS カレンダー連携 ── */}
+        <ICSSection />
+
+        {/* ── App Badge 説明 ── */}
+        <AppBadgeInfo />
 
         {/* ── Backup section ── */}
         <BackupSection />

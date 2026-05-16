@@ -9,6 +9,9 @@ import { goodDays, type GoodDay } from '../../core/db'
 import { colors } from '../../ui/tokens'
 import type { AccentName } from '../../ui/tokens'
 import { getStudyQuota } from '../../core/study-store'
+import { AbsencePostIcon } from '../../ui/AbsencePost'
+import { OkaeiriButton } from '../../ui/OkaeiriButton'
+import { clearBadge } from '../../core/app-badge'
 
 interface Module {
   label: string
@@ -135,6 +138,9 @@ export function HomePage() {
   const rightModules = modules.slice(4, 8)
   const studyQuota   = getStudyQuota()
 
+  // ホーム画面を開いたらバッジをクリア（在室確認）
+  useEffect(() => { clearBadge() }, [])
+
   const orb = <FushigiOrb mode="hero" mood={mood} message={message} />
 
   return (
@@ -153,6 +159,8 @@ export function HomePage() {
             🌙
           </button>
         )}
+        {/* 手紙の不在着信ポストアイコン */}
+        <AbsencePostIcon />
         <button
           onClick={() => navigate('/settings')}
           title="設定"
@@ -254,6 +262,9 @@ export function HomePage() {
       </div>
 
       <AlertFooter alertLevel={alertLevel} />
+
+      {/* 「ただいま」フローティングボタン（6時間以上不在のとき） */}
+      <OkaeiriButton />
     </div>
   )
 }

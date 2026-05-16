@@ -1,11 +1,9 @@
-import { type CSSProperties, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { glassCard, colors, type Mood } from './tokens'
 import { useAppStore } from '../core/store'
-import { FushigiLive2D, DEFAULT_MODEL_URL } from './FushigiLive2D'
 
-const BASE       = import.meta.env.BASE_URL
-const USE_LIVE2D = import.meta.env.VITE_USE_LIVE2D === 'true'
+const BASE = import.meta.env.BASE_URL
 
 interface Props {
   mode: 'hero' | 'mini'
@@ -53,23 +51,16 @@ const moodFilter: Record<Mood, CSSProperties> = {
 const SMILE_FILTER = 'brightness(1.08) saturate(1.15) hue-rotate(-5deg)'
 
 export function FushigiOrb({ mode, mood = 'default', message }: Props) {
-  const navigate           = useNavigate()
-  const alertLevel         = useAppStore((s) => s.alertLevel)
-  const theme              = useAppStore((s) => s.theme)
-  const live2dModelUrl     = useAppStore((s) => s.live2dModelUrl)
-  const isDark             = theme === 'dark'
-  const modelUrl           = live2dModelUrl ?? DEFAULT_MODEL_URL
-  const canvasRef          = useRef<HTMLCanvasElement>(null)
-  const orbRef             = useRef<HTMLDivElement>(null)
-  const imgRef             = useRef<HTMLImageElement>(null)
-  const particles          = useRef<Particle[]>([])
-  const animRef            = useRef<number>(0)
-  const smiling            = useRef(false)
-  const [live2dError, setLive2dError] = useState(false)
-  const useLive2D = USE_LIVE2D && !live2dError
-
-  // Reset error when model URL changes (allows retry with new model)
-  useEffect(() => { setLive2dError(false) }, [modelUrl])
+  const navigate       = useNavigate()
+  const alertLevel     = useAppStore((s) => s.alertLevel)
+  const theme          = useAppStore((s) => s.theme)
+  const isDark         = theme === 'dark'
+  const canvasRef      = useRef<HTMLCanvasElement>(null)
+  const orbRef         = useRef<HTMLDivElement>(null)
+  const imgRef         = useRef<HTMLImageElement>(null)
+  const particles      = useRef<Particle[]>([])
+  const animRef        = useRef<number>(0)
+  const smiling        = useRef(false)
 
   useEffect(() => {
     if (mode !== 'hero') return
@@ -168,14 +159,11 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
           transition: 'backdrop-filter 3s ease-in-out',
         }}
       >
-        {useLive2D
-          ? <FushigiLive2D key={modelUrl} mode="mini" modelUrl={modelUrl} onError={() => setLive2dError(true)} />
-          : <img
-              src={`${BASE}fushigi-placeholder.png`}
-              alt="" width={50} height={50}
-              style={{ borderRadius: '50%', objectFit: 'cover', ...moodFilter[mood] }}
-            />
-        }
+        <img
+          src={`${BASE}fushigi-placeholder.png`}
+          alt="" width={50} height={50}
+          style={{ borderRadius: '50%', objectFit: 'cover', ...moodFilter[mood] }}
+        />
       </button>
     )
   }
@@ -200,20 +188,17 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
           transition: 'backdrop-filter 3s ease-in-out',
         }}
       >
-        {useLive2D
-          ? <FushigiLive2D key={modelUrl} mode="hero" modelUrl={modelUrl} onError={() => setLive2dError(true)} />
-          : <img
-              ref={imgRef}
-              src={`${BASE}fushigi-placeholder.png`}
-              alt="フシギちゃん"
-              style={{
-                width: '88%', height: '88%',
-                objectFit: 'cover', borderRadius: '50%',
-                ...moodFilter[mood],
-                transition: 'filter 0.3s ease',
-              }}
-            />
-        }
+        <img
+          ref={imgRef}
+          src={`${BASE}fushigi-placeholder.png`}
+          alt="フシギちゃん"
+          style={{
+            width: '88%', height: '88%',
+            objectFit: 'cover', borderRadius: '50%',
+            ...moodFilter[mood],
+            transition: 'filter 0.3s ease',
+          }}
+        />
         <canvas
           ref={canvasRef}
           style={{
@@ -232,7 +217,6 @@ export function FushigiOrb({ mode, mood = 'default', message }: Props) {
           color: colors.text.primary,
           textAlign: 'center',
           margin: 0, lineHeight: 1.8, maxWidth: '280px', minHeight: '3.2em',
-          // 明るいモード時は読みやすさのため気泡背景を追加
           ...(isDark ? {} : {
             background: 'rgba(168,200,232,0.35)',
             borderRadius: 14,
