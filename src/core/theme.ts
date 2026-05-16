@@ -1,5 +1,7 @@
 // ── Theme definitions ─────────────────────────────────────────────────────────
 
+export type UILayout = 'grid' | 'compact' | 'list' | 'otome'
+
 export interface UITheme {
   id:          string
   label:       string
@@ -16,6 +18,10 @@ export interface UITheme {
   // Glass card tint (light mode — pastel themes)
   frostLight:       string
   frostBorderLight: string
+  // Card border-radius (px value as string, e.g. "24px")
+  cardRadius:  string
+  // Home layout variant
+  layout:      UILayout
   // If true, ThemeSyncer forces white text regardless of page
   alwaysDark:  boolean
   // Preview swatch colors shown in theme picker
@@ -33,6 +39,8 @@ export const UI_THEMES: readonly UITheme[] = [
     frostBorder:      'rgba(255,255,255,0.14)',
     frostLight:       'rgba(45,42,62,0.08)',
     frostBorderLight: 'rgba(45,42,62,0.15)',
+    cardRadius:  '24px',
+    layout:      'grid',
     alwaysDark:  false,
     swatches:    ['#FAF5EE', '#EDE6DD', '#A8C8E8'],
   },
@@ -46,6 +54,8 @@ export const UI_THEMES: readonly UITheme[] = [
     frostBorder:      'rgba(255,255,255,0.14)',
     frostLight:       'rgba(210,140,165,0.11)',
     frostBorderLight: 'rgba(210,140,165,0.22)',
+    cardRadius:  '28px',
+    layout:      'grid',
     alwaysDark:  false,
     swatches:    ['#FEF0F5', '#F3D0E2', '#E8B4C8'],
   },
@@ -53,12 +63,14 @@ export const UI_THEMES: readonly UITheme[] = [
     id:          'lavender',
     label:       'ラベンダー',
     emoji:       '💜',
-    description: 'おだやかなラベンダー畑',
+    description: 'すっきり並んだラベンダーリスト',
     bg1: '#F5F0FD', bg2: '#EDE4FA', bg3: '#E2D5F5', bgPos: '35% 45%',
     frost:            'rgba(255,255,255,0.07)',
     frostBorder:      'rgba(255,255,255,0.14)',
     frostLight:       'rgba(130,100,180,0.09)',
     frostBorderLight: 'rgba(130,100,180,0.18)',
+    cardRadius:  '14px',
+    layout:      'list',
     alwaysDark:  false,
     swatches:    ['#F5F0FD', '#E2D5F5', '#B4A4D8'],
   },
@@ -66,12 +78,14 @@ export const UI_THEMES: readonly UITheme[] = [
     id:          'mint',
     label:       'ミント',
     emoji:       '🌿',
-    description: 'すっきりと澄んだ緑の風',
+    description: '機能一覧がすっきり見えるコンパクト配置',
     bg1: '#EDFBF5', bg2: '#DBF5E8', bg3: '#CEECDE', bgPos: '45% 50%',
     frost:            'rgba(255,255,255,0.07)',
     frostBorder:      'rgba(255,255,255,0.14)',
     frostLight:       'rgba(60,140,100,0.09)',
     frostBorderLight: 'rgba(60,140,100,0.18)',
+    cardRadius:  '16px',
+    layout:      'compact',
     alwaysDark:  false,
     swatches:    ['#EDFBF5', '#CEECDE', '#78C898'],
   },
@@ -85,6 +99,8 @@ export const UI_THEMES: readonly UITheme[] = [
     frostBorder:      'rgba(255,255,255,0.14)',
     frostLight:       'rgba(80,120,180,0.09)',
     frostBorderLight: 'rgba(80,120,180,0.18)',
+    cardRadius:  '20px',
+    layout:      'grid',
     alwaysDark:  false,
     swatches:    ['#EEF5FD', '#CDDCF2', '#A8C8E8'],
   },
@@ -98,8 +114,25 @@ export const UI_THEMES: readonly UITheme[] = [
     frostBorder:      'rgba(255,255,255,0.14)',
     frostLight:       'rgba(200,140,80,0.09)',
     frostBorderLight: 'rgba(200,140,80,0.18)',
+    cardRadius:  '24px',
+    layout:      'grid',
     alwaysDark:  false,
     swatches:    ['#FDF6ED', '#F4DBBF', '#C8A050'],
+  },
+  {
+    id:          'otome',
+    label:       '乙女ゲーム',
+    emoji:       '🎀',
+    description: '選択肢を選ぶような、ときめく配置',
+    bg1: '#FDF0F8', bg2: '#F9E2F2', bg3: '#F2D0E8', bgPos: '40% 30%',
+    frost:            'rgba(255,255,255,0.07)',
+    frostBorder:      'rgba(255,255,255,0.14)',
+    frostLight:       'rgba(210,140,170,0.10)',
+    frostBorderLight: 'rgba(210,140,170,0.22)',
+    cardRadius:  '8px',
+    layout:      'otome',
+    alwaysDark:  false,
+    swatches:    ['#FDF0F8', '#F2D0E8', '#E8A0C0'],
   },
 ]
 
@@ -117,6 +150,7 @@ export function applyTheme(theme: UITheme): void {
   root.style.setProperty('--haku-frost-border', theme.frostBorder)
   root.style.setProperty('--haku-frost-light',        theme.frostLight)
   root.style.setProperty('--haku-frost-border-light', theme.frostBorderLight)
+  root.style.setProperty('--haku-card-radius', theme.cardRadius)
   if (theme.alwaysDark) {
     root.style.setProperty('--haku-text-primary',   '#F0EEF8')
     root.style.setProperty('--haku-text-secondary', '#A89FC0')

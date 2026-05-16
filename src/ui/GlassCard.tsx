@@ -12,7 +12,7 @@ const glassLight: CSSProperties = {
   background: 'var(--haku-frost-light, rgba(45,42,62,0.08))',
   backdropFilter: 'blur(20px) saturate(120%)',
   WebkitBackdropFilter: 'blur(20px) saturate(120%)',
-  borderRadius: '24px',
+  borderRadius: 'var(--haku-card-radius, 24px)',
   boxShadow: '0 4px 20px rgba(45,42,62,0.08), inset 0 1px 0 rgba(255,255,255,0.4)',
 }
 

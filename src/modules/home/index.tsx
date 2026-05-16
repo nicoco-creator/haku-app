@@ -13,6 +13,7 @@ import { AbsencePostIcon } from '../../ui/AbsencePost'
 import { OkaeiriButton } from '../../ui/OkaeiriButton'
 import { clearBadge } from '../../core/app-badge'
 import { DailyMission } from '../../ui/DailyMission'
+import { UI_THEMES, type UILayout } from '../../core/theme'
 
 interface Module {
   label: string
@@ -70,7 +71,6 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
   return (
     <div style={{ padding: '0 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
 
-      {/* レベル2以上の警告テキスト */}
       {alertLevel >= 2 && (
         <p style={{
           fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
@@ -81,7 +81,6 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
         </p>
       )}
 
-      {/* レベル3：良かった日カード */}
       {alertLevel >= 3 && memoryCard && (
         <GlassCard size="sm" style={{ maxWidth: 320, width: '100%', textAlign: 'center' }}>
           <p style={{
@@ -99,7 +98,6 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
         </GlassCard>
       )}
 
-      {/* 「私はいま大丈夫」ボタン（レベル1以上で表示） */}
       {!isOkActive ? (
         <button
           onClick={handleImOk}
@@ -135,20 +133,244 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
   )
 }
 
+// ── Layout: Grid (2列カード) ──────────────────────────────────────────────────
+function MobileGrid({ navigate, studyQuota }: { navigate: (to: string) => void, studyQuota: ReturnType<typeof getStudyQuota> }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 w-full">
+      {modules.map((mod) => (
+        <GlassCard
+          key={mod.to}
+          accent={mod.accent}
+          size="sm"
+          onClick={() => navigate(mod.to)}
+          className="flex flex-col items-center justify-center gap-2 aspect-square"
+        >
+          <span style={{ fontSize: '26px', lineHeight: 1 }}>{mod.emoji}</span>
+          <span style={{ fontSize: '11px', color: colors.text.secondary, textAlign: 'center', lineHeight: 1.4, wordBreak: 'keep-all' }}>
+            {mod.label}
+          </span>
+          {mod.to === '/study' && studyQuota && (
+            <span style={{ fontSize: '9px', color: colors.accent.indigo, textAlign: 'center', lineHeight: 1 }}>
+              今日: {studyQuota.dailyLoad}章
+            </span>
+          )}
+        </GlassCard>
+      ))}
+    </div>
+  )
+}
+
+// ── Layout: Compact (3列・小カード) ───────────────────────────────────────────
+function MobileCompact({ navigate, studyQuota }: { navigate: (to: string) => void, studyQuota: ReturnType<typeof getStudyQuota> }) {
+  return (
+    <div className="grid grid-cols-3 gap-2 w-full">
+      {modules.map((mod) => (
+        <GlassCard
+          key={mod.to}
+          accent={mod.accent}
+          size="sm"
+          onClick={() => navigate(mod.to)}
+          className="flex flex-col items-center justify-center gap-1"
+          style={{ aspectRatio: '1', padding: '8px 6px', minHeight: 72 }}
+        >
+          <span style={{ fontSize: '20px', lineHeight: 1 }}>{mod.emoji}</span>
+          <span style={{ fontSize: '9px', color: colors.text.secondary, textAlign: 'center', lineHeight: 1.35, wordBreak: 'keep-all' }}>
+            {mod.label}
+          </span>
+          {mod.to === '/study' && studyQuota && (
+            <span style={{ fontSize: '8px', color: colors.accent.indigo, textAlign: 'center', lineHeight: 1 }}>
+              {studyQuota.dailyLoad}章
+            </span>
+          )}
+        </GlassCard>
+      ))}
+    </div>
+  )
+}
+
+// ── Layout: List (テキストリスト) ─────────────────────────────────────────────
+function MobileList({ navigate }: { navigate: (to: string) => void }) {
+  return (
+    <div className="flex flex-col gap-1 w-full">
+      {modules.map((mod) => (
+        <button
+          key={mod.to}
+          onClick={() => navigate(mod.to)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '11px 16px', width: '100%', textAlign: 'left',
+            background: 'var(--haku-frost-light, rgba(130,100,180,0.09))',
+            border: '1px solid var(--haku-frost-border-light, rgba(130,100,180,0.18))',
+            borderRadius: 'var(--haku-card-radius, 14px)',
+            cursor: 'pointer',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(130,100,180,0.22))' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--haku-frost-light, rgba(130,100,180,0.09))' }}
+        >
+          <span style={{ fontSize: '20px', width: 28, textAlign: 'center', flexShrink: 0, lineHeight: 1 }}>{mod.emoji}</span>
+          <span style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: colors.text.primary, flex: 1 }}>
+            {mod.label}
+          </span>
+          <span style={{ color: colors.text.secondary, fontSize: 14, flexShrink: 0 }}>›</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Layout: Otome (乙女ゲーム風) ──────────────────────────────────────────────
+function MobileOtome({ navigate }: { navigate: (to: string) => void }) {
+  return (
+    <>
+      <p style={{
+        fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
+        fontSize: 12, color: colors.text.secondary,
+        letterSpacing: '0.12em', textAlign: 'center', margin: '0 0 4px',
+      }}>
+        ✦ ── 今日は何をしますか ── ✦
+      </p>
+      <div className="flex flex-col gap-1.5 w-full">
+        {modules.map((mod) => (
+          <button
+            key={mod.to}
+            onClick={() => navigate(mod.to)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '11px 16px', width: '100%', textAlign: 'left',
+              background: 'var(--haku-frost-light, rgba(210,140,170,0.10))',
+              border: '1px solid var(--haku-frost-border-light, rgba(210,140,170,0.22))',
+              borderLeft: `3px solid ${colors.accent.blush}`,
+              borderRadius: '0 8px 8px 0',
+              cursor: 'pointer',
+              transition: 'background 0.15s, border-left-color 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(210,140,170,0.22))'
+              e.currentTarget.style.borderLeftColor = colors.text.primary
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--haku-frost-light, rgba(210,140,170,0.10))'
+              e.currentTarget.style.borderLeftColor = colors.accent.blush
+            }}
+          >
+            <span style={{ fontSize: '18px', flexShrink: 0, lineHeight: 1 }}>{mod.emoji}</span>
+            <span style={{ fontFamily: "'Noto Serif JP', serif", fontWeight: 300, fontSize: 13, color: colors.text.primary, flex: 1 }}>
+              {mod.label}
+            </span>
+            <span style={{ color: colors.accent.blush, fontSize: 10, flexShrink: 0, letterSpacing: '0.05em' }}>▷</span>
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
+// ── Desktop layout helpers ────────────────────────────────────────────────────
+
+function DesktopCard({ mod, navigate, studyQuota }: {
+  mod: Module
+  navigate: (to: string) => void
+  studyQuota: ReturnType<typeof getStudyQuota>
+}) {
+  return (
+    <GlassCard
+      accent={mod.accent}
+      onClick={() => navigate(mod.to)}
+      className="flex items-center gap-4"
+    >
+      <span style={{ fontSize: '30px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
+      <span style={{ fontSize: '14px', color: colors.text.primary, fontWeight: 400 }}>{mod.label}</span>
+      {mod.to === '/study' && studyQuota && (
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: colors.accent.indigo, whiteSpace: 'nowrap' }}>
+          {studyQuota.dailyLoad}章/日
+        </span>
+      )}
+    </GlassCard>
+  )
+}
+
+function DesktopCompactCard({ mod, navigate }: { mod: Module, navigate: (to: string) => void }) {
+  return (
+    <GlassCard
+      accent={mod.accent}
+      size="sm"
+      onClick={() => navigate(mod.to)}
+      className="flex items-center gap-3"
+      style={{ padding: '10px 14px' }}
+    >
+      <span style={{ fontSize: '22px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
+      <span style={{ fontSize: '12px', color: colors.text.primary }}>{mod.label}</span>
+    </GlassCard>
+  )
+}
+
+function DesktopListItem({ mod, navigate }: { mod: Module, navigate: (to: string) => void }) {
+  return (
+    <button
+      onClick={() => navigate(mod.to)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '10px 16px', width: '100%', textAlign: 'left',
+        background: 'var(--haku-frost-light, rgba(130,100,180,0.09))',
+        border: '1px solid var(--haku-frost-border-light, rgba(130,100,180,0.18))',
+        borderRadius: 'var(--haku-card-radius, 14px)',
+        cursor: 'pointer', transition: 'background 0.15s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(130,100,180,0.22))' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--haku-frost-light, rgba(130,100,180,0.09))' }}
+    >
+      <span style={{ fontSize: '18px', width: 24, textAlign: 'center', flexShrink: 0 }}>{mod.emoji}</span>
+      <span style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 12, color: colors.text.primary, flex: 1 }}>{mod.label}</span>
+      <span style={{ color: colors.text.secondary, fontSize: 13 }}>›</span>
+    </button>
+  )
+}
+
+function DesktopOtomeItem({ mod, navigate }: { mod: Module, navigate: (to: string) => void }) {
+  return (
+    <button
+      onClick={() => navigate(mod.to)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '9px 14px', width: '100%', textAlign: 'left',
+        background: 'var(--haku-frost-light, rgba(210,140,170,0.10))',
+        border: '1px solid var(--haku-frost-border-light, rgba(210,140,170,0.22))',
+        borderLeft: `3px solid ${colors.accent.blush}`,
+        borderRadius: '0 8px 8px 0',
+        cursor: 'pointer', transition: 'background 0.15s',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(210,140,170,0.22))' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--haku-frost-light, rgba(210,140,170,0.10))' }}
+    >
+      <span style={{ fontSize: '16px', flexShrink: 0 }}>{mod.emoji}</span>
+      <span style={{ fontFamily: "'Noto Serif JP', serif", fontWeight: 300, fontSize: 12, color: colors.text.primary, flex: 1 }}>{mod.label}</span>
+      <span style={{ color: colors.accent.blush, fontSize: 9 }}>▷</span>
+    </button>
+  )
+}
+
 export function HomePage() {
   const navigate   = useNavigate()
   const alertLevel = useAppStore((s) => s.alertLevel)
+  const uiThemeId  = useAppStore((s) => s.uiThemeId)
   const { message, mood } = getGreeting()
   const lastDay = isLastDayOfMonth()
+
+  const layout: UILayout = UI_THEMES.find(t => t.id === uiThemeId)?.layout ?? 'grid'
 
   const leftModules  = modules.slice(0, 5)
   const rightModules = modules.slice(5)
   const studyQuota   = getStudyQuota()
 
-  // ホーム画面を開いたらバッジをクリア（在室確認）
   useEffect(() => { clearBadge() }, [])
 
   const orb = <FushigiOrb mode="hero" mood={mood} message={message} />
+
+  // ── Desktop layout: list / otome は2列並びにする ─────────────────────────
+  const isAltDesktop = layout === 'list' || layout === 'otome'
+  const leftHalf  = modules.slice(0, Math.ceil(modules.length / 2))
+  const rightHalf = modules.slice(Math.ceil(modules.length / 2))
 
   return (
     <div className="min-h-svh flex flex-col">
@@ -158,124 +380,95 @@ export function HomePage() {
           <button
             onClick={() => navigate('/seen')}
             title="月末記録"
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '22px', lineHeight: 1, padding: '4px',
-            }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }}
           >
             🌙
           </button>
         )}
-        {/* 手紙の不在着信ポストアイコン */}
         <AbsencePostIcon />
         <button
           onClick={() => navigate('/settings')}
           title="設定"
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontSize: '22px', lineHeight: 1, padding: '4px',
-          }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }}
         >
           ⚙️
         </button>
       </header>
 
       {/* ── モバイルレイアウト (md 未満) ── */}
-      <div className="md:hidden flex flex-col items-center px-4 pb-4 gap-6">
+      <div className="md:hidden flex flex-col items-center px-4 pb-4 gap-5">
         <div
           className="flex items-center justify-center w-full"
-          style={{ minHeight: '38svh' }}
+          style={{ minHeight: layout === 'otome' ? '38svh' : '34svh' }}
         >
           {orb}
         </div>
 
-        <div className="w-full">
-          <DailyMission />
-        </div>
+        {layout !== 'otome' && (
+          <div className="w-full">
+            <DailyMission />
+          </div>
+        )}
 
-        <div className="grid grid-cols-2 gap-3 w-full">
-          {modules.map((mod) => (
-            <GlassCard
-              key={mod.to}
-              accent={mod.accent}
-              size="sm"
-              onClick={() => navigate(mod.to)}
-              className="flex flex-col items-center justify-center gap-2 aspect-square"
-            >
-              <span style={{ fontSize: '26px', lineHeight: 1 }}>{mod.emoji}</span>
-              <span
-                style={{
-                  fontSize: '11px',
-                  color: colors.text.secondary,
-                  textAlign: 'center',
-                  lineHeight: 1.4,
-                  wordBreak: 'keep-all',
-                }}
-              >
-                {mod.label}
-              </span>
-              {mod.to === '/study' && studyQuota && (
-                <span style={{ fontSize: '9px', color: colors.accent.indigo, textAlign: 'center', lineHeight: 1 }}>
-                  今日: {studyQuota.dailyLoad}章
-                </span>
-              )}
-            </GlassCard>
-          ))}
-        </div>
+        {layout === 'grid'    && <MobileGrid    navigate={navigate} studyQuota={studyQuota} />}
+        {layout === 'compact' && <MobileCompact navigate={navigate} studyQuota={studyQuota} />}
+        {layout === 'list'    && <MobileList    navigate={navigate} />}
+        {layout === 'otome'   && <MobileOtome   navigate={navigate} />}
       </div>
 
       {/* ── デスクトップレイアウト (md 以上) ── */}
-      <div className="hidden md:grid flex-1 px-6 pb-10 pt-2"
-        style={{ gridTemplateColumns: '1fr auto 1fr', gap: '24px' }}
-      >
-        {/* 左カラム */}
-        <div className="flex flex-col gap-3 content-start">
-          {leftModules.map((mod) => (
-            <GlassCard
-              key={mod.to}
-              accent={mod.accent}
-              onClick={() => navigate(mod.to)}
-              className="flex items-center gap-4"
-            >
-              <span style={{ fontSize: '30px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
-              <span style={{ fontSize: '14px', color: colors.text.primary, fontWeight: 400 }}>{mod.label}</span>
-              {mod.to === '/study' && studyQuota && (
-                <span style={{ marginLeft: 'auto', fontSize: 11, color: colors.accent.indigo, whiteSpace: 'nowrap' }}>
-                  {studyQuota.dailyLoad}章/日
-                </span>
-              )}
-            </GlassCard>
-          ))}
-        </div>
-
-        {/* 中央 Orb */}
-        <div
-          className="flex flex-col items-center justify-center gap-4"
-          style={{ minWidth: '260px', paddingTop: '8px' }}
+      {!isAltDesktop ? (
+        /* grid / compact: 3カラム */
+        <div className="hidden md:grid flex-1 px-6 pb-10 pt-2"
+          style={{ gridTemplateColumns: '1fr auto 1fr', gap: '24px' }}
         >
-          {orb}
-          <DailyMission />
+          <div className="flex flex-col gap-3 content-start">
+            {(layout === 'compact' ? leftHalf : leftModules).map((mod) =>
+              layout === 'compact'
+                ? <DesktopCompactCard key={mod.to} mod={mod} navigate={navigate} />
+                : <DesktopCard key={mod.to} mod={mod} navigate={navigate} studyQuota={studyQuota} />
+            )}
+          </div>
+          <div className="flex flex-col items-center justify-center gap-4"
+            style={{ minWidth: '260px', paddingTop: '8px' }}
+          >
+            {orb}
+            <DailyMission />
+          </div>
+          <div className="flex flex-col gap-3 content-start">
+            {(layout === 'compact' ? rightHalf : rightModules).map((mod) =>
+              layout === 'compact'
+                ? <DesktopCompactCard key={mod.to} mod={mod} navigate={navigate} />
+                : <DesktopCard key={mod.to} mod={mod} navigate={navigate} studyQuota={studyQuota} />
+            )}
+          </div>
         </div>
-
-        {/* 右カラム */}
-        <div className="flex flex-col gap-3 content-start">
-          {rightModules.map((mod) => (
-            <GlassCard
-              key={mod.to}
-              accent={mod.accent}
-              onClick={() => navigate(mod.to)}
-              className="flex items-center gap-4"
-            >
-              <span style={{ fontSize: '30px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
-              <span style={{ fontSize: '14px', color: colors.text.primary, fontWeight: 400 }}>{mod.label}</span>
-            </GlassCard>
-          ))}
+      ) : (
+        /* list / otome: 中央 Orb + 下部2列リスト */
+        <div className="hidden md:flex flex-col flex-1 items-center px-6 pb-10 pt-2 gap-6">
+          <div className="flex items-center justify-center" style={{ minHeight: '36svh' }}>
+            {orb}
+          </div>
+          {layout === 'otome' && (
+            <p style={{
+              fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
+              fontSize: 12, color: colors.text.secondary,
+              letterSpacing: '0.12em', margin: 0,
+            }}>
+              ✦ ── 今日は何をしますか ── ✦
+            </p>
+          )}
+          <div className="grid w-full gap-2" style={{ gridTemplateColumns: '1fr 1fr', maxWidth: 680 }}>
+            {modules.map((mod) =>
+              layout === 'list'
+                ? <DesktopListItem  key={mod.to} mod={mod} navigate={navigate} />
+                : <DesktopOtomeItem key={mod.to} mod={mod} navigate={navigate} />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       <AlertFooter alertLevel={alertLevel} />
-
-      {/* 「ただいま」フローティングボタン（6時間以上不在のとき） */}
       <OkaeiriButton />
     </div>
   )

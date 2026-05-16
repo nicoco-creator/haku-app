@@ -1,7 +1,14 @@
 import { ModuleShell } from '../../ui/ModuleShell'
 import { useAppStore } from '../../core/store'
-import { UI_THEMES, applyTheme } from '../../core/theme'
+import { UI_THEMES, applyTheme, type UILayout } from '../../core/theme'
 import { colors } from '../../ui/tokens'
+
+const layoutLabel: Record<UILayout, string> = {
+  grid:    '2列グリッド',
+  compact: '3列コンパクト',
+  list:    'テキストリスト',
+  otome:   '乙女ゲーム風',
+}
 
 export function ThemePage() {
   const uiThemeId  = useAppStore((s) => s.uiThemeId)
@@ -76,6 +83,9 @@ export function ThemePage() {
                     fontSize: 11, color: colors.text.secondary,
                   }}>
                     {theme.description}
+                  </p>
+                  <p style={{ margin: '3px 0 0', fontFamily: "'Noto Sans JP',sans-serif", fontSize: 10, color: `${colors.text.secondary}80` }}>
+                    配置：{layoutLabel[theme.layout]}
                   </p>
                 </div>
 

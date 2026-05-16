@@ -67,11 +67,11 @@ export const glassCard: CSSProperties = {
   backdropFilter: 'blur(20px) saturate(120%)',
   WebkitBackdropFilter: 'blur(20px) saturate(120%)',
   border: '1px solid rgba(255,255,255,0.14)',
-  borderRadius: '24px',
+  borderRadius: 'var(--haku-card-radius, 24px)',
   boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
 }
 
 export const glassCardLarge: CSSProperties = {
   ...glassCard,
-  borderRadius: '28px',
+  borderRadius: 'var(--haku-card-radius, 24px)',
 }
