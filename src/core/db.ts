@@ -101,7 +101,9 @@ export interface NewsReport {
   category: string       // category id
   categoryLabel: string
   categoryEmoji: string
-  content: string        // AI response text
+  content: string        // AI response text ('' if PDF-only)
+  pdfBlob?: Blob         // imported PDF file
+  reportType?: 'text' | 'pdf'
   createdAt: string      // ISO timestamp
 }
 

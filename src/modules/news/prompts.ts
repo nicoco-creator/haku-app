@@ -57,6 +57,57 @@ export const NEWS_CATEGORIES: readonly NewsCategory[] = [
 
 // ── プロンプト生成 ────────────────────────────────────────────────────────────
 
+/** Gemini向け：写真付きスライドデッキ作成プロンプト */
+export function generateSlidesPrompt(categoryId: string): string {
+  const cat = NEWS_CATEGORIES.find((c) => c.id === categoryId)
+  if (!cat) return ''
+
+  const now     = new Date()
+  const dateStr = now.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+  const weekday = ['日', '月', '火', '水', '木', '金', '土'][now.getDay()]
+
+  return `# 今日の${cat.label}ニュース スライドデッキ作成
+
+**今日（${dateStr}・${weekday}曜日）の「${cat.domain}」分野の最新ニュースをもとに、わかりやすいスライドデッキを作成してください。**
+
+⚠️ **【必須】Google検索ツールを使い、今日・直近の実際のニュースを調べてから作成してください。**
+
+---
+
+## スライド構成（10〜15枚）
+
+### スライド 1：タイトル
+- タイトル：「${dateStr}の${cat.label}ニュース」
+- サブタイトル：今日のキーワード3つ
+- 関連する写真・イラストを1枚挿入
+
+### スライド 2：今日のハイライト
+- 今日の注目ニュース3選を箇条書き
+- 関連するグラフまたはイラストを挿入
+
+### スライド 3〜12：各トピックの詳細
+（1トピックにつき1〜2枚。以下の形式で）
+- 見出し（記事タイトル）
+- 概要（箇条書き3〜4点）
+- **必ず関連する写真・イラスト・グラフを1枚以上挿入**
+- 情報源（媒体名・日付）
+
+### スライド 最終：まとめ
+- 今日全体のトレンドと今後の注目点
+- 参考文献リスト（URL付き）
+
+---
+
+## 視覚的要件
+- 各スライドに関連写真またはイラストを最低1枚
+- フォントは大きめ（見出し28pt以上）で読みやすく
+- カラーテーマは統一感のあるシンプルなデザイン
+- グラフ・図表があればデータを可視化して挿入
+
+完成したらPDF形式でエクスポートできるようにしてください。`
+}
+
+/** Claude向け：テキスト調査レポートプロンプト */
 export function generateNewsPrompt(categoryId: string): string {
   const cat = NEWS_CATEGORIES.find((c) => c.id === categoryId)
   if (!cat) return ''
