@@ -13,6 +13,9 @@ import { AbsencePostIcon } from '../../ui/AbsencePost'
 import { OkaeiriButton } from '../../ui/OkaeiriButton'
 import { clearBadge } from '../../core/app-badge'
 import { DailyMission } from '../../ui/DailyMission'
+import { HomeGadgetWrap } from '../../ui/GadgetBoundary'
+import { GadgetMount } from '../../ui/GadgetMount'
+import { loadGadgets, deleteGadget, type SavedGadget } from '../../core/gadget-engine'
 
 interface Module {
   label: string
@@ -34,7 +37,52 @@ const modules: Module[] = [
   { label: '心の足跡',       emoji: '🌑', accent: 'silver', to: '/collection' },
   { label: '不安の買い取り', emoji: '🏷️', accent: 'silver', to: '/auction' },
   { label: '今日のニュース', emoji: '📰', accent: 'blue',   to: '/news'    },
+  { label: '禁忌の実験室', emoji: '🧪', accent: 'ash',    to: '/lab'     },
 ]
+
+function GadgetsSection() {
+  const [gadgets, setGadgets] = useState<SavedGadget[]>(() => loadGadgets())
+
+  const handleDelete = (id: string) => {
+    deleteGadget(id)
+    setGadgets(loadGadgets())
+  }
+
+  if (gadgets.length === 0) return null
+
+  return (
+    <div style={{ padding: '0 16px 8px' }}>
+      <p style={{
+        fontFamily: "'Noto Sans JP',sans-serif", fontSize: 11,
+        color: colors.text.secondary, margin: '0 0 8px',
+      }}>
+        🧩 マイガジェット
+      </p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        {gadgets.map((g) => (
+          <div key={g.id} style={{ position: 'relative', minWidth: 200, maxWidth: 320, flex: '1 1 200px' }}>
+            <HomeGadgetWrap gadgetName={g.name}>
+              <GadgetMount code={g.code} />
+            </HomeGadgetWrap>
+            <button
+              onClick={() => handleDelete(g.id)}
+              title="削除"
+              style={{
+                position: 'absolute', top: 6, right: 6,
+                background: 'rgba(0,0,0,0.4)', border: 'none',
+                borderRadius: '50%', width: 22, height: 22,
+                color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+                fontSize: 11, lineHeight: 1, padding: 0,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function isLastDayOfMonth(): boolean {
   const now = new Date()
@@ -271,6 +319,7 @@ export function HomePage() {
         </div>
       </div>
 
+      <GadgetsSection />
       <AlertFooter alertLevel={alertLevel} />
 
       {/* 「ただいま」フローティングボタン（6時間以上不在のとき） */}

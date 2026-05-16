@@ -24,6 +24,7 @@ import { TimerPage }        from './modules/timer'
 import { CollectionPage }   from './modules/collection'
 import { AuctionPage }      from './modules/auction'
 import { NewsPage }         from './modules/news'
+import { LabPage }          from './modules/lab'
 import { BlockModeOverlay } from './ui/BlockModeOverlay'
 import { GiftRevealPopup }  from './ui/GiftRevealPopup'
 import { getReservedGift }  from './core/shop'
@@ -82,6 +83,7 @@ function AppContent() {
           <Route path="/collection" element={<CollectionPage />} />
           <Route path="/auction"    element={<AuctionPage />} />
           <Route path="/news"       element={<NewsPage />} />
+          <Route path="/lab"        element={<LabPage />} />
         </Routes>
       </div>
       {/* AI magic-button panel — hidden on /vault and /companion (isolation policy) */}
