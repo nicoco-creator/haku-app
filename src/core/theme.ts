@@ -10,9 +10,12 @@ export interface UITheme {
   bg2:         string
   bg3:         string
   bgPos:       string   // e.g. "30% 40%"
-  // Glass card tint
+  // Glass card tint (dark mode)
   frost:       string
   frostBorder: string
+  // Glass card tint (light mode — pastel themes)
+  frostLight:       string
+  frostBorderLight: string
   // If true, ThemeSyncer forces white text regardless of page
   alwaysDark:  boolean
   // Preview swatch colors shown in theme picker
@@ -26,65 +29,77 @@ export const UI_THEMES: readonly UITheme[] = [
     emoji:       '🌸',
     description: 'やわらかいクリームのひかり',
     bg1: '#FAF5EE', bg2: '#F5F1EC', bg3: '#EDE6DD', bgPos: '30% 40%',
-    frost:       'rgba(255,255,255,0.07)',
-    frostBorder: 'rgba(255,255,255,0.14)',
+    frost:            'rgba(255,255,255,0.07)',
+    frostBorder:      'rgba(255,255,255,0.14)',
+    frostLight:       'rgba(45,42,62,0.08)',
+    frostBorderLight: 'rgba(45,42,62,0.15)',
     alwaysDark:  false,
-    swatches:    ['#FAF5EE', 'rgba(45,42,62,0.09)', '#A8C8E8'],
+    swatches:    ['#FAF5EE', '#EDE6DD', '#A8C8E8'],
   },
   {
-    id:          'night',
-    label:       '夜空',
-    emoji:       '🌙',
-    description: '深い紫の夜の空間',
-    bg1: '#2A2050', bg2: '#1C1A2E', bg3: '#14122A', bgPos: '30% 40%',
-    frost:       'rgba(255,255,255,0.07)',
-    frostBorder: 'rgba(255,255,255,0.14)',
-    alwaysDark:  true,
-    swatches:    ['#1C1A2E', 'rgba(255,255,255,0.07)', '#A8C8E8'],
+    id:          'sakura',
+    label:       'さくら',
+    emoji:       '🌸',
+    description: 'ほんのり染まるさくら色',
+    bg1: '#FEF0F5', bg2: '#FAE0EC', bg3: '#F3D0E2', bgPos: '40% 35%',
+    frost:            'rgba(255,255,255,0.07)',
+    frostBorder:      'rgba(255,255,255,0.14)',
+    frostLight:       'rgba(210,140,165,0.11)',
+    frostBorderLight: 'rgba(210,140,165,0.22)',
+    alwaysDark:  false,
+    swatches:    ['#FEF0F5', '#F3D0E2', '#E8B4C8'],
   },
   {
-    id:          'cute',
-    label:       'かわいい',
-    emoji:       '🩷',
-    description: 'あまく、やわらかいばら色',
-    bg1: '#2E1A28', bg2: '#1E1228', bg3: '#120E1E', bgPos: '40% 60%',
-    frost:       'rgba(232,180,200,0.11)',
-    frostBorder: 'rgba(232,180,200,0.25)',
-    alwaysDark:  true,
-    swatches:    ['#2E1A28', 'rgba(232,180,200,0.11)', '#E8B4C8'],
+    id:          'lavender',
+    label:       'ラベンダー',
+    emoji:       '💜',
+    description: 'おだやかなラベンダー畑',
+    bg1: '#F5F0FD', bg2: '#EDE4FA', bg3: '#E2D5F5', bgPos: '35% 45%',
+    frost:            'rgba(255,255,255,0.07)',
+    frostBorder:      'rgba(255,255,255,0.14)',
+    frostLight:       'rgba(130,100,180,0.09)',
+    frostBorderLight: 'rgba(130,100,180,0.18)',
+    alwaysDark:  false,
+    swatches:    ['#F5F0FD', '#E2D5F5', '#B4A4D8'],
   },
   {
-    id:          'stylish',
-    label:       'おしゃれ',
-    emoji:       '🖤',
-    description: 'モノトーンのミニマル空間',
-    bg1: '#1A1A1E', bg2: '#0D0D10', bg3: '#08080A', bgPos: '50% 50%',
-    frost:       'rgba(255,255,255,0.05)',
-    frostBorder: 'rgba(255,255,255,0.09)',
-    alwaysDark:  true,
-    swatches:    ['#0D0D10', 'rgba(255,255,255,0.05)', '#9890B0'],
-  },
-  {
-    id:          'game',
-    label:       'ゲーム風',
-    emoji:       '🎮',
-    description: 'ネオンが光るサイバー空間',
-    bg1: '#0A1A3A', bg2: '#050E1E', bg3: '#020408', bgPos: '20% 30%',
-    frost:       'rgba(91,92,230,0.13)',
-    frostBorder: 'rgba(91,92,230,0.35)',
-    alwaysDark:  true,
-    swatches:    ['#050E1E', 'rgba(91,92,230,0.13)', '#5B5CE6'],
-  },
-  {
-    id:          'healing',
-    label:       '癒し',
+    id:          'mint',
+    label:       'ミント',
     emoji:       '🌿',
-    description: 'しんとした深い森のなか',
-    bg1: '#142018', bg2: '#0E160E', bg3: '#080C08', bgPos: '40% 60%',
-    frost:       'rgba(120,180,130,0.09)',
-    frostBorder: 'rgba(120,180,130,0.22)',
-    alwaysDark:  true,
-    swatches:    ['#0E160E', 'rgba(120,180,130,0.09)', '#78B482'],
+    description: 'すっきりと澄んだ緑の風',
+    bg1: '#EDFBF5', bg2: '#DBF5E8', bg3: '#CEECDE', bgPos: '45% 50%',
+    frost:            'rgba(255,255,255,0.07)',
+    frostBorder:      'rgba(255,255,255,0.14)',
+    frostLight:       'rgba(60,140,100,0.09)',
+    frostBorderLight: 'rgba(60,140,100,0.18)',
+    alwaysDark:  false,
+    swatches:    ['#EDFBF5', '#CEECDE', '#78C898'],
+  },
+  {
+    id:          'sky',
+    label:       'スカイ',
+    emoji:       '☁️',
+    description: 'ふわりと広がる青空',
+    bg1: '#EEF5FD', bg2: '#DDEAF8', bg3: '#CDDCF2', bgPos: '30% 30%',
+    frost:            'rgba(255,255,255,0.07)',
+    frostBorder:      'rgba(255,255,255,0.14)',
+    frostLight:       'rgba(80,120,180,0.09)',
+    frostBorderLight: 'rgba(80,120,180,0.18)',
+    alwaysDark:  false,
+    swatches:    ['#EEF5FD', '#CDDCF2', '#A8C8E8'],
+  },
+  {
+    id:          'peach',
+    label:       'ピーチ',
+    emoji:       '🍑',
+    description: 'あたたかくやさしいひだまり',
+    bg1: '#FDF6ED', bg2: '#FAE8D0', bg3: '#F4DBBF', bgPos: '50% 40%',
+    frost:            'rgba(255,255,255,0.07)',
+    frostBorder:      'rgba(255,255,255,0.14)',
+    frostLight:       'rgba(200,140,80,0.09)',
+    frostBorderLight: 'rgba(200,140,80,0.18)',
+    alwaysDark:  false,
+    swatches:    ['#FDF6ED', '#F4DBBF', '#C8A050'],
   },
 ]
 
@@ -100,6 +115,8 @@ export function applyTheme(theme: UITheme): void {
   root.style.setProperty('--haku-bg-pos', theme.bgPos)
   root.style.setProperty('--haku-frost',        theme.frost)
   root.style.setProperty('--haku-frost-border', theme.frostBorder)
+  root.style.setProperty('--haku-frost-light',        theme.frostLight)
+  root.style.setProperty('--haku-frost-border-light', theme.frostBorderLight)
   if (theme.alwaysDark) {
     root.style.setProperty('--haku-text-primary',   '#F0EEF8')
     root.style.setProperty('--haku-text-secondary', '#A89FC0')

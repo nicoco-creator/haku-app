@@ -8,11 +8,8 @@ const paddingMap = {
   lg: '32px 36px',
 }
 
-// 明るいクリーム背景の上で「暗く見える」dark-tinted glass
-// rgba(45,42,62,0.09) on #F5F1EC ≈ RGB(221,217,215) — 背景より明確に暗く、
-// かつダークテキスト(#2D2A3E)との contrast 比 ≈ 9:1 で十分読みやすい
 const glassLight: CSSProperties = {
-  background: 'rgba(45,42,62,0.09)',
+  background: 'var(--haku-frost-light, rgba(45,42,62,0.08))',
   backdropFilter: 'blur(20px) saturate(120%)',
   WebkitBackdropFilter: 'blur(20px) saturate(120%)',
   borderRadius: '24px',
@@ -45,7 +42,7 @@ export function GlassCard({
   const alphaHex    = isDark ? '80' : '99'   // 0.50 dark / 0.60 light
   const borderColor = accent
     ? `${getAccent(accent)}${alphaHex}`
-    : isDark ? 'var(--haku-frost-border, rgba(255,255,255,0.14))' : 'rgba(45,42,62,0.18)'
+    : isDark ? 'var(--haku-frost-border, rgba(255,255,255,0.14))' : 'var(--haku-frost-border-light, rgba(45,42,62,0.15))'
 
   return (
     <div

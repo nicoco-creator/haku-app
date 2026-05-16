@@ -59,7 +59,14 @@ export function BGMPage() {
     }
     setImporting(true); setImportErr(null)
     try {
-      const blob = new Blob([await file.arrayBuffer()], { type: file.type })
+      const mimeForExt: Record<string, string> = {
+        '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.ogg': 'audio/ogg',
+        '.m4a': 'audio/mp4',  '.flac': 'audio/flac', '.aac': 'audio/aac',
+        '.mp4': 'audio/mp4',
+      }
+      const ext = (file.name.toLowerCase().match(/\.\w+$/) ?? [''])[0]
+      const mimeType = file.type || mimeForExt[ext] || 'audio/mpeg'
+      const blob = new Blob([await file.arrayBuffer()], { type: mimeType })
       await bgmTracks.add({ name: file.name.replace(/\.[^.]+$/, ''), audioBlob: blob, createdAt: new Date().toISOString() })
       setImported(await bgmTracks.list())
     } catch {
@@ -228,7 +235,7 @@ export function BGMPage() {
         }}>
           <input
             type="file"
-            accept="audio/*"
+            accept=".mp3,.wav,.ogg,.m4a,.flac,.aac,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/flac,audio/aac"
             style={{ display: 'none' }}
             onChange={handleImport}
             disabled={importing}
