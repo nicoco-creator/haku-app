@@ -13,7 +13,7 @@ import { AbsencePostIcon } from '../../ui/AbsencePost'
 import { OkaeiriButton } from '../../ui/OkaeiriButton'
 import { clearBadge } from '../../core/app-badge'
 import { DailyMission } from '../../ui/DailyMission'
-import { UI_THEMES, type UILayout } from '../../core/theme'
+import type { UILayout } from '../../core/theme'
 
 interface Module {
   label: string
@@ -70,7 +70,6 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
 
   return (
     <div style={{ padding: '0 16px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-
       {alertLevel >= 2 && (
         <p style={{
           fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
@@ -80,52 +79,33 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
           最近、かなりアクセル踏んでます。最後にちゃんと休んだの、いつでしたっけ。
         </p>
       )}
-
       {alertLevel >= 3 && memoryCard && (
         <GlassCard size="sm" style={{ maxWidth: 320, width: '100%', textAlign: 'center' }}>
-          <p style={{
-            fontFamily: "'Noto Sans JP', sans-serif", fontSize: 11,
-            color: colors.text.secondary, margin: '0 0 4px',
-          }}>
+          <p style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 11, color: colors.text.secondary, margin: '0 0 4px' }}>
             {memoryCard.date}
           </p>
-          <p style={{
-            fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
-            fontSize: 13, color: colors.text.primary, margin: 0, lineHeight: 1.7,
-          }}>
+          <p style={{ fontFamily: "'Noto Serif JP', serif", fontWeight: 300, fontSize: 13, color: colors.text.primary, margin: 0, lineHeight: 1.7 }}>
             {memoryCard.content.split(/[。\n]/)[0]}
           </p>
         </GlassCard>
       )}
-
       {!isOkActive ? (
         <button
           onClick={handleImOk}
           style={{
-            background: 'none',
-            border: `1px solid ${colors.accent.silver}50`,
-            borderRadius: 20, padding: '5px 18px',
-            color: colors.text.secondary,
+            background: 'none', border: `1px solid ${colors.accent.silver}50`,
+            borderRadius: 20, padding: '5px 18px', color: colors.text.secondary,
             fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
             fontSize: 12, cursor: 'pointer', letterSpacing: '0.05em',
             transition: 'border-color 0.2s, color 0.2s',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = colors.accent.silver
-            e.currentTarget.style.color = colors.text.primary
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = `${colors.accent.silver}50`
-            e.currentTarget.style.color = colors.text.secondary
-          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = colors.accent.silver; e.currentTarget.style.color = colors.text.primary }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = `${colors.accent.silver}50`; e.currentTarget.style.color = colors.text.secondary }}
         >
           私はいま大丈夫
         </button>
       ) : (
-        <p style={{
-          fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
-          fontSize: 12, color: colors.accent.blue, margin: 0,
-        }}>
+        <p style={{ fontFamily: "'Noto Serif JP', serif", fontWeight: 300, fontSize: 12, color: colors.accent.blue, margin: 0 }}>
           24時間、そっとしておきます。
         </p>
       )}
@@ -133,15 +113,44 @@ function AlertFooter({ alertLevel }: { alertLevel: number }) {
   )
 }
 
-// ── Layout: Grid (2列カード) ──────────────────────────────────────────────────
-function MobileGrid({ navigate, studyQuota }: { navigate: (to: string) => void, studyQuota: ReturnType<typeof getStudyQuota> }) {
+// ── Mobile layout components ──────────────────────────────────────────────────
+
+type LayoutProps = { navigate: (to: string) => void; studyQuota: ReturnType<typeof getStudyQuota> }
+
+function MobileList({ navigate }: LayoutProps) {
+  return (
+    <div className="flex flex-col gap-1 w-full">
+      {modules.map((mod) => (
+        <button
+          key={mod.to}
+          onClick={() => navigate(mod.to)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            padding: '11px 16px', width: '100%', textAlign: 'left',
+            background: 'var(--haku-frost-light, rgba(45,42,62,0.08))',
+            border: '1px solid var(--haku-frost-border-light, rgba(45,42,62,0.15))',
+            borderRadius: 'var(--haku-card-radius, 20px)',
+            cursor: 'pointer', transition: 'filter 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.97)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.filter = '' }}
+        >
+          <span style={{ fontSize: '20px', width: 28, textAlign: 'center', flexShrink: 0, lineHeight: 1 }}>{mod.emoji}</span>
+          <span style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: colors.text.primary, flex: 1 }}>
+            {mod.label}
+          </span>
+          <span style={{ color: colors.text.secondary, fontSize: 14, flexShrink: 0 }}>›</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function MobileGrid2({ navigate, studyQuota }: LayoutProps) {
   return (
     <div className="grid grid-cols-2 gap-3 w-full">
       {modules.map((mod) => (
-        <GlassCard
-          key={mod.to}
-          accent={mod.accent}
-          size="sm"
+        <GlassCard key={mod.to} accent={mod.accent} size="sm"
           onClick={() => navigate(mod.to)}
           className="flex flex-col items-center justify-center gap-2 aspect-square"
         >
@@ -160,15 +169,11 @@ function MobileGrid({ navigate, studyQuota }: { navigate: (to: string) => void, 
   )
 }
 
-// ── Layout: Compact (3列・小カード) ───────────────────────────────────────────
-function MobileCompact({ navigate, studyQuota }: { navigate: (to: string) => void, studyQuota: ReturnType<typeof getStudyQuota> }) {
+function MobileGrid3({ navigate, studyQuota }: LayoutProps) {
   return (
     <div className="grid grid-cols-3 gap-2 w-full">
       {modules.map((mod) => (
-        <GlassCard
-          key={mod.to}
-          accent={mod.accent}
-          size="sm"
+        <GlassCard key={mod.to} accent={mod.accent} size="sm"
           onClick={() => navigate(mod.to)}
           className="flex flex-col items-center justify-center gap-1"
           style={{ aspectRatio: '1', padding: '8px 6px', minHeight: 72 }}
@@ -188,97 +193,35 @@ function MobileCompact({ navigate, studyQuota }: { navigate: (to: string) => voi
   )
 }
 
-// ── Layout: List (テキストリスト) ─────────────────────────────────────────────
-function MobileList({ navigate }: { navigate: (to: string) => void }) {
+function MobileGrid4({ navigate, studyQuota }: LayoutProps) {
   return (
-    <div className="flex flex-col gap-1 w-full">
+    <div className="grid grid-cols-4 gap-1.5 w-full">
       {modules.map((mod) => (
-        <button
-          key={mod.to}
+        <GlassCard key={mod.to} accent={mod.accent} size="sm"
           onClick={() => navigate(mod.to)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '11px 16px', width: '100%', textAlign: 'left',
-            background: 'var(--haku-frost-light, rgba(130,100,180,0.09))',
-            border: '1px solid var(--haku-frost-border-light, rgba(130,100,180,0.18))',
-            borderRadius: 'var(--haku-card-radius, 14px)',
-            cursor: 'pointer',
-            transition: 'background 0.15s',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(130,100,180,0.22))' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--haku-frost-light, rgba(130,100,180,0.09))' }}
+          className="flex flex-col items-center justify-center gap-0.5"
+          style={{ aspectRatio: '1', padding: '7px 4px', minHeight: 58 }}
         >
-          <span style={{ fontSize: '20px', width: 28, textAlign: 'center', flexShrink: 0, lineHeight: 1 }}>{mod.emoji}</span>
-          <span style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: colors.text.primary, flex: 1 }}>
+          <span style={{ fontSize: '16px', lineHeight: 1 }}>{mod.emoji}</span>
+          <span style={{ fontSize: '8px', color: colors.text.secondary, textAlign: 'center', lineHeight: 1.3, wordBreak: 'keep-all' }}>
             {mod.label}
           </span>
-          <span style={{ color: colors.text.secondary, fontSize: 14, flexShrink: 0 }}>›</span>
-        </button>
+          {mod.to === '/study' && studyQuota && (
+            <span style={{ fontSize: '7px', color: colors.accent.indigo, textAlign: 'center', lineHeight: 1 }}>
+              {studyQuota.dailyLoad}章
+            </span>
+          )}
+        </GlassCard>
       ))}
     </div>
   )
 }
 
-// ── Layout: Otome (乙女ゲーム風) ──────────────────────────────────────────────
-function MobileOtome({ navigate }: { navigate: (to: string) => void }) {
-  return (
-    <>
-      <p style={{
-        fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
-        fontSize: 12, color: colors.text.secondary,
-        letterSpacing: '0.12em', textAlign: 'center', margin: '0 0 4px',
-      }}>
-        ✦ ── 今日は何をしますか ── ✦
-      </p>
-      <div className="flex flex-col gap-1.5 w-full">
-        {modules.map((mod) => (
-          <button
-            key={mod.to}
-            onClick={() => navigate(mod.to)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12,
-              padding: '11px 16px', width: '100%', textAlign: 'left',
-              background: 'var(--haku-frost-light, rgba(210,140,170,0.10))',
-              border: '1px solid var(--haku-frost-border-light, rgba(210,140,170,0.22))',
-              borderLeft: `3px solid ${colors.accent.blush}`,
-              borderRadius: '0 8px 8px 0',
-              cursor: 'pointer',
-              transition: 'background 0.15s, border-left-color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(210,140,170,0.22))'
-              e.currentTarget.style.borderLeftColor = colors.text.primary
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--haku-frost-light, rgba(210,140,170,0.10))'
-              e.currentTarget.style.borderLeftColor = colors.accent.blush
-            }}
-          >
-            <span style={{ fontSize: '18px', flexShrink: 0, lineHeight: 1 }}>{mod.emoji}</span>
-            <span style={{ fontFamily: "'Noto Serif JP', serif", fontWeight: 300, fontSize: 13, color: colors.text.primary, flex: 1 }}>
-              {mod.label}
-            </span>
-            <span style={{ color: colors.accent.blush, fontSize: 10, flexShrink: 0, letterSpacing: '0.05em' }}>▷</span>
-          </button>
-        ))}
-      </div>
-    </>
-  )
-}
+// ── Desktop layout components ─────────────────────────────────────────────────
 
-// ── Desktop layout helpers ────────────────────────────────────────────────────
-
-function DesktopCard({ mod, navigate, studyQuota }: {
-  mod: Module
-  navigate: (to: string) => void
-  studyQuota: ReturnType<typeof getStudyQuota>
-}) {
+function DesktopCardLg({ mod, navigate, studyQuota }: { mod: Module; navigate: (to: string) => void; studyQuota: ReturnType<typeof getStudyQuota> }) {
   return (
-    <GlassCard
-      accent={mod.accent}
-      onClick={() => navigate(mod.to)}
-      className="flex items-center gap-4"
-    >
+    <GlassCard accent={mod.accent} onClick={() => navigate(mod.to)} className="flex items-center gap-4">
       <span style={{ fontSize: '30px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
       <span style={{ fontSize: '14px', color: colors.text.primary, fontWeight: 400 }}>{mod.label}</span>
       {mod.to === '/study' && studyQuota && (
@@ -290,14 +233,10 @@ function DesktopCard({ mod, navigate, studyQuota }: {
   )
 }
 
-function DesktopCompactCard({ mod, navigate }: { mod: Module, navigate: (to: string) => void }) {
+function DesktopCardSm({ mod, navigate }: { mod: Module; navigate: (to: string) => void }) {
   return (
-    <GlassCard
-      accent={mod.accent}
-      size="sm"
-      onClick={() => navigate(mod.to)}
-      className="flex items-center gap-3"
-      style={{ padding: '10px 14px' }}
+    <GlassCard accent={mod.accent} size="sm" onClick={() => navigate(mod.to)}
+      className="flex items-center gap-3" style={{ padding: '9px 14px' }}
     >
       <span style={{ fontSize: '22px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
       <span style={{ fontSize: '12px', color: colors.text.primary }}>{mod.label}</span>
@@ -305,20 +244,31 @@ function DesktopCompactCard({ mod, navigate }: { mod: Module, navigate: (to: str
   )
 }
 
-function DesktopListItem({ mod, navigate }: { mod: Module, navigate: (to: string) => void }) {
+function DesktopCardXs({ mod, navigate }: { mod: Module; navigate: (to: string) => void }) {
+  return (
+    <GlassCard accent={mod.accent} size="sm" onClick={() => navigate(mod.to)}
+      className="flex items-center gap-2" style={{ padding: '7px 10px' }}
+    >
+      <span style={{ fontSize: '18px', lineHeight: 1, flexShrink: 0 }}>{mod.emoji}</span>
+      <span style={{ fontSize: '11px', color: colors.text.primary, lineHeight: 1.3 }}>{mod.label}</span>
+    </GlassCard>
+  )
+}
+
+function DesktopListItem({ mod, navigate }: { mod: Module; navigate: (to: string) => void }) {
   return (
     <button
       onClick={() => navigate(mod.to)}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '10px 16px', width: '100%', textAlign: 'left',
-        background: 'var(--haku-frost-light, rgba(130,100,180,0.09))',
-        border: '1px solid var(--haku-frost-border-light, rgba(130,100,180,0.18))',
-        borderRadius: 'var(--haku-card-radius, 14px)',
-        cursor: 'pointer', transition: 'background 0.15s',
+        background: 'var(--haku-frost-light, rgba(45,42,62,0.08))',
+        border: '1px solid var(--haku-frost-border-light, rgba(45,42,62,0.15))',
+        borderRadius: 'var(--haku-card-radius, 20px)',
+        cursor: 'pointer', transition: 'filter 0.15s',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(130,100,180,0.22))' }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--haku-frost-light, rgba(130,100,180,0.09))' }}
+      onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.97)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.filter = '' }}
     >
       <span style={{ fontSize: '18px', width: 24, textAlign: 'center', flexShrink: 0 }}>{mod.emoji}</span>
       <span style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 12, color: colors.text.primary, flex: 1 }}>{mod.label}</span>
@@ -327,144 +277,99 @@ function DesktopListItem({ mod, navigate }: { mod: Module, navigate: (to: string
   )
 }
 
-function DesktopOtomeItem({ mod, navigate }: { mod: Module, navigate: (to: string) => void }) {
-  return (
-    <button
-      onClick={() => navigate(mod.to)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '9px 14px', width: '100%', textAlign: 'left',
-        background: 'var(--haku-frost-light, rgba(210,140,170,0.10))',
-        border: '1px solid var(--haku-frost-border-light, rgba(210,140,170,0.22))',
-        borderLeft: `3px solid ${colors.accent.blush}`,
-        borderRadius: '0 8px 8px 0',
-        cursor: 'pointer', transition: 'background 0.15s',
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--haku-frost-border-light, rgba(210,140,170,0.22))' }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--haku-frost-light, rgba(210,140,170,0.10))' }}
-    >
-      <span style={{ fontSize: '16px', flexShrink: 0 }}>{mod.emoji}</span>
-      <span style={{ fontFamily: "'Noto Serif JP', serif", fontWeight: 300, fontSize: 12, color: colors.text.primary, flex: 1 }}>{mod.label}</span>
-      <span style={{ color: colors.accent.blush, fontSize: 9 }}>▷</span>
-    </button>
-  )
-}
-
 export function HomePage() {
   const navigate   = useNavigate()
   const alertLevel = useAppStore((s) => s.alertLevel)
-  const uiThemeId  = useAppStore((s) => s.uiThemeId)
+  const uiLayout   = useAppStore((s) => s.uiLayout) as UILayout
   const { message, mood } = getGreeting()
-  const lastDay = isLastDayOfMonth()
-
-  const layout: UILayout = UI_THEMES.find(t => t.id === uiThemeId)?.layout ?? 'grid'
-
-  const leftModules  = modules.slice(0, 5)
-  const rightModules = modules.slice(5)
-  const studyQuota   = getStudyQuota()
+  const lastDay    = isLastDayOfMonth()
+  const studyQuota = getStudyQuota()
 
   useEffect(() => { clearBadge() }, [])
 
   const orb = <FushigiOrb mode="hero" mood={mood} message={message} />
 
-  // ── Desktop layout: list / otome は2列並びにする ─────────────────────────
-  const isAltDesktop = layout === 'list' || layout === 'otome'
-  const leftHalf  = modules.slice(0, Math.ceil(modules.length / 2))
-  const rightHalf = modules.slice(Math.ceil(modules.length / 2))
+  // grid2 uses the classic 3-column desktop; others use top-orb + below-grid
+  const isClassicDesktop = uiLayout === 'grid2'
+  const leftModules  = modules.slice(0, 5)
+  const rightModules = modules.slice(5)
+  const leftHalf     = modules.slice(0, Math.ceil(modules.length / 2))
+  const rightHalf    = modules.slice(Math.ceil(modules.length / 2))
 
   return (
     <div className="min-h-svh flex flex-col">
       {/* ヘッダー */}
       <header className="flex justify-end items-center gap-2 px-4 pt-5 pb-2 flex-shrink-0">
         {lastDay && (
-          <button
-            onClick={() => navigate('/seen')}
-            title="月末記録"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }}
-          >
+          <button onClick={() => navigate('/seen')} title="月末記録"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }}>
             🌙
           </button>
         )}
         <AbsencePostIcon />
-        <button
-          onClick={() => navigate('/settings')}
-          title="設定"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }}
-        >
+        <button onClick={() => navigate('/settings')} title="設定"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '4px' }}>
           ⚙️
         </button>
       </header>
 
-      {/* ── モバイルレイアウト (md 未満) ── */}
+      {/* ── モバイルレイアウト ── */}
       <div className="md:hidden flex flex-col items-center px-4 pb-4 gap-5">
-        <div
-          className="flex items-center justify-center w-full"
-          style={{ minHeight: layout === 'otome' ? '38svh' : '34svh' }}
-        >
+        <div className="flex items-center justify-center w-full" style={{ minHeight: '34svh' }}>
           {orb}
         </div>
-
-        {layout !== 'otome' && (
-          <div className="w-full">
-            <DailyMission />
-          </div>
-        )}
-
-        {layout === 'grid'    && <MobileGrid    navigate={navigate} studyQuota={studyQuota} />}
-        {layout === 'compact' && <MobileCompact navigate={navigate} studyQuota={studyQuota} />}
-        {layout === 'list'    && <MobileList    navigate={navigate} />}
-        {layout === 'otome'   && <MobileOtome   navigate={navigate} />}
+        <div className="w-full">
+          <DailyMission />
+        </div>
+        {uiLayout === 'list'  && <MobileList  navigate={navigate} studyQuota={studyQuota} />}
+        {uiLayout === 'grid2' && <MobileGrid2 navigate={navigate} studyQuota={studyQuota} />}
+        {uiLayout === 'grid3' && <MobileGrid3 navigate={navigate} studyQuota={studyQuota} />}
+        {uiLayout === 'grid4' && <MobileGrid4 navigate={navigate} studyQuota={studyQuota} />}
       </div>
 
-      {/* ── デスクトップレイアウト (md 以上) ── */}
-      {!isAltDesktop ? (
-        /* grid / compact: 3カラム */
+      {/* ── デスクトップ: grid2は3カラム、その他はtop-orb + below ── */}
+      {isClassicDesktop ? (
         <div className="hidden md:grid flex-1 px-6 pb-10 pt-2"
           style={{ gridTemplateColumns: '1fr auto 1fr', gap: '24px' }}
         >
           <div className="flex flex-col gap-3 content-start">
-            {(layout === 'compact' ? leftHalf : leftModules).map((mod) =>
-              layout === 'compact'
-                ? <DesktopCompactCard key={mod.to} mod={mod} navigate={navigate} />
-                : <DesktopCard key={mod.to} mod={mod} navigate={navigate} studyQuota={studyQuota} />
-            )}
+            {leftModules.map(mod => <DesktopCardLg key={mod.to} mod={mod} navigate={navigate} studyQuota={studyQuota} />)}
           </div>
-          <div className="flex flex-col items-center justify-center gap-4"
-            style={{ minWidth: '260px', paddingTop: '8px' }}
-          >
+          <div className="flex flex-col items-center justify-center gap-4" style={{ minWidth: '260px', paddingTop: '8px' }}>
             {orb}
             <DailyMission />
           </div>
           <div className="flex flex-col gap-3 content-start">
-            {(layout === 'compact' ? rightHalf : rightModules).map((mod) =>
-              layout === 'compact'
-                ? <DesktopCompactCard key={mod.to} mod={mod} navigate={navigate} />
-                : <DesktopCard key={mod.to} mod={mod} navigate={navigate} studyQuota={studyQuota} />
-            )}
+            {rightModules.map(mod => <DesktopCardLg key={mod.to} mod={mod} navigate={navigate} studyQuota={studyQuota} />)}
           </div>
         </div>
       ) : (
-        /* list / otome: 中央 Orb + 下部2列リスト */
-        <div className="hidden md:flex flex-col flex-1 items-center px-6 pb-10 pt-2 gap-6">
-          <div className="flex items-center justify-center" style={{ minHeight: '36svh' }}>
+        <div className="hidden md:flex flex-col flex-1 items-center px-6 pb-10 pt-2 gap-5">
+          <div className="flex items-center justify-center" style={{ minHeight: '34svh' }}>
             {orb}
           </div>
-          {layout === 'otome' && (
-            <p style={{
-              fontFamily: "'Noto Serif JP', serif", fontWeight: 300,
-              fontSize: 12, color: colors.text.secondary,
-              letterSpacing: '0.12em', margin: 0,
-            }}>
-              ✦ ── 今日は何をしますか ── ✦
-            </p>
+          <DailyMission />
+          {uiLayout === 'list' && (
+            <div className="grid w-full gap-1.5" style={{ gridTemplateColumns: '1fr 1fr', maxWidth: 680 }}>
+              {modules.map(mod => <DesktopListItem key={mod.to} mod={mod} navigate={navigate} />)}
+            </div>
           )}
-          <div className="grid w-full gap-2" style={{ gridTemplateColumns: '1fr 1fr', maxWidth: 680 }}>
-            {modules.map((mod) =>
-              layout === 'list'
-                ? <DesktopListItem  key={mod.to} mod={mod} navigate={navigate} />
-                : <DesktopOtomeItem key={mod.to} mod={mod} navigate={navigate} />
-            )}
-          </div>
+          {uiLayout === 'grid3' && (
+            <div className="grid w-full gap-3" style={{ gridTemplateColumns: '1fr auto 1fr', maxWidth: 720, alignItems: 'start' }}>
+              <div className="flex flex-col gap-2">
+                {leftHalf.map(mod => <DesktopCardSm key={mod.to} mod={mod} navigate={navigate} />)}
+              </div>
+              <div style={{ width: 1, background: 'rgba(0,0,0,0.05)', alignSelf: 'stretch' }} />
+              <div className="flex flex-col gap-2">
+                {rightHalf.map(mod => <DesktopCardSm key={mod.to} mod={mod} navigate={navigate} />)}
+              </div>
+            </div>
+          )}
+          {uiLayout === 'grid4' && (
+            <div className="grid w-full gap-2" style={{ gridTemplateColumns: 'repeat(4, 1fr)', maxWidth: 720 }}>
+              {modules.map(mod => <DesktopCardXs key={mod.to} mod={mod} navigate={navigate} />)}
+            </div>
+          )}
         </div>
       )}
 
