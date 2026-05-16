@@ -81,15 +81,18 @@ export function parseGadget(code: string): ParseResult {
 // ── Mini-VM ───────────────────────────────────────────────────────────────────
 
 export class GadgetRuntime {
-  private options: GadgetOptions
-  private container: HTMLElement
-  private state: Record<string, unknown>
-  private proxy: Record<string, unknown>
-  private destroyed = false
+  private options:       GadgetOptions
+  private container:     HTMLElement
+  private state:         Record<string, unknown>
+  private privateState:  Record<string, unknown>  // $$ prefix — no re-render
+  private proxy:         Record<string, unknown>
+  private destroyed      = false
+  private renderPending  = false                  // batch flag
 
   constructor(options: GadgetOptions, container: HTMLElement) {
-    this.options = options
-    this.container = container
+    this.options      = options
+    this.container    = container
+    this.privateState = {}
 
     let rawState: Record<string, unknown> = {}
     if (typeof options.data === 'function') {
@@ -97,15 +100,27 @@ export class GadgetRuntime {
     }
     this.state = rawState
 
-    // Proxy triggers re-render on set (this.xxx = value in methods)
     const self = this
     this.proxy = new Proxy(this.state, {
       get(_target, key: string) {
+        // $$ prefix → non-reactive private storage (AudioContext, timers, etc.)
+        if (typeof key === 'string' && key.startsWith('$$')) return self.privateState[key]
         return self.state[key]
       },
       set(_target, key: string, value) {
+        if (typeof key === 'string' && key.startsWith('$$')) {
+          self.privateState[key] = value
+          return true  // no re-render
+        }
         self.state[key] = value
-        if (!self.destroyed) self.render()
+        // Batch: re-render once after all synchronous assignments finish
+        if (!self.destroyed && !self.renderPending) {
+          self.renderPending = true
+          queueMicrotask(() => {
+            self.renderPending = false
+            if (!self.destroyed) self.render()
+          })
+        }
         return true
       },
     })
@@ -114,7 +129,6 @@ export class GadgetRuntime {
   }
 
   private interpolate(template: string): string {
-    // {{ varName }} and {{ this.varName }}
     return template.replace(/\{\{\s*(?:this\.)?(\w[\w.]*)\s*\}\}/g, (_, key) => {
       const val = this.state[key]
       return val !== undefined && val !== null ? String(val) : ''
@@ -125,23 +139,26 @@ export class GadgetRuntime {
     // 1. Interpolate {{ variables }}
     let html = this.interpolate(this.options.template)
 
-    // 2. Replace @event="method" → data-ev-event="method" so innerHTML is valid
+    // 2. @event="method" or @event="method()" → data-ev-event="method"
     html = html.replace(/@([\w:.-]+)="([^"]+)"/g, (_, event, handler) => {
       return `data-ev-${event}="${handler}"`
     })
 
     this.container.innerHTML = html
 
-    // 3. Bind events after DOM is written
+    // 3. Bind events — strip () and args so "play()" → "play"
     this.container.querySelectorAll<HTMLElement>('*').forEach((el) => {
       for (const attr of Array.from(el.attributes)) {
         if (!attr.name.startsWith('data-ev-')) continue
-        const event = attr.name.slice('data-ev-'.length)
-        const handlerName = attr.value.trim()
-        const method = this.options.methods?.[handlerName]
+        const event       = attr.name.slice('data-ev-'.length)
+        const rawName     = attr.value.trim()
+        // Normalize: "doThing()" → "doThing", "doThing(arg)" → "doThing"
+        const handlerName = rawName.replace(/\(.*\)$/, '').trim()
+        const method      = this.options.methods?.[handlerName]
         if (typeof method === 'function') {
+          // NOTE: no preventDefault — let the browser treat this as a user gesture
+          //       (required for AudioContext, fullscreen, clipboard, etc.)
           el.addEventListener(event, (e) => {
-            e.preventDefault()
             try {
               method.call(this.proxy, e)
             } catch (err) {
