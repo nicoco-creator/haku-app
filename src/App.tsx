@@ -18,6 +18,8 @@ import { WaitingPage }      from './modules/waiting'
 import { VaultPage }        from './modules/vault'
 import { SettingsPage }     from './modules/settings'
 import { SeenPage }         from './modules/seen'
+import { TimerPage }        from './modules/timer'
+import { CollectionPage }   from './modules/collection'
 import './ui/transitions.css'
 
 // ── テーマ・CSS変数・メタタグを一括管理 ────────────────────────────────────────
@@ -66,7 +68,9 @@ function AppContent() {
           <Route path="/waiting"   element={<WaitingPage />} />
           <Route path="/vault"     element={<VaultPage />} />
           <Route path="/settings"  element={<SettingsPage />} />
-          <Route path="/seen"      element={<SeenPage />} />
+          <Route path="/seen"       element={<SeenPage />} />
+          <Route path="/timer"      element={<TimerPage />} />
+          <Route path="/collection" element={<CollectionPage />} />
         </Routes>
       </div>
       {/* AI magic-button panel — hidden on /vault and /companion (isolation policy) */}

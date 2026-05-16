@@ -12,6 +12,7 @@ import { getStudyQuota } from '../../core/study-store'
 import { AbsencePostIcon } from '../../ui/AbsencePost'
 import { OkaeiriButton } from '../../ui/OkaeiriButton'
 import { clearBadge } from '../../core/app-badge'
+import { DailyMission } from '../../ui/DailyMission'
 
 interface Module {
   label: string
@@ -29,6 +30,8 @@ const modules: Module[] = [
   { label: '良かった日',     emoji: '☀️', accent: 'blush',  to: '/goodday' },
   { label: '待っているもの', emoji: '⏳', accent: 'silver', to: '/waiting' },
   { label: '裁かない倉庫',   emoji: '🗝️', accent: 'ash',    to: '/vault' },
+  { label: '作業タイマー',   emoji: '⏱️', accent: 'blue',   to: '/timer' },
+  { label: '心の足跡',       emoji: '🌑', accent: 'silver', to: '/collection' },
 ]
 
 function isLastDayOfMonth(): boolean {
@@ -134,8 +137,8 @@ export function HomePage() {
   const { message, mood } = getGreeting()
   const lastDay = isLastDayOfMonth()
 
-  const leftModules  = modules.slice(0, 4)
-  const rightModules = modules.slice(4, 8)
+  const leftModules  = modules.slice(0, 5)
+  const rightModules = modules.slice(5)
   const studyQuota   = getStudyQuota()
 
   // ホーム画面を開いたらバッジをクリア（在室確認）
@@ -180,6 +183,10 @@ export function HomePage() {
           style={{ minHeight: '38svh' }}
         >
           {orb}
+        </div>
+
+        <div className="w-full">
+          <DailyMission />
         </div>
 
         <div className="grid grid-cols-2 gap-3 w-full">
@@ -239,10 +246,11 @@ export function HomePage() {
 
         {/* 中央 Orb */}
         <div
-          className="flex flex-col items-center justify-center"
+          className="flex flex-col items-center justify-center gap-4"
           style={{ minWidth: '260px', paddingTop: '8px' }}
         >
           {orb}
+          <DailyMission />
         </div>
 
         {/* 右カラム */}
